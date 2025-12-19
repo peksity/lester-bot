@@ -1,0 +1,25 @@
+===============================================
+         PASTE YOUR TOKENS HERE
+===============================================
+
+LESTER TOKEN:
+
+
+PAVEL TOKEN:
+
+
+CRIPPS TOKEN:
+
+
+MADAM NAZAR TOKEN:
+
+
+ANTHROPIC API KEY:
+
+
+DATABASE_URL (from Railway):
+
+
+===============================================
+    KEEP THIS FILE SAFE - DON'T SHARE IT
+===============================================
