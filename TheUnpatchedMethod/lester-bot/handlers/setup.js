@@ -27,6 +27,7 @@ const SERVER_STRUCTURE = {
     
     // Special Roles
     { name: '🏆 The #1', color: '#FFD700', permissions: 'MEMBER', hoist: true },
+    { name: '🏆 The #1', color: '#FFD700', permissions: 'MEMBER', hoist: true },
     
     // Activity/Trust Roles
     { name: '💎 Method Finder', color: '#E91E63', permissions: 'MEMBER', hoist: true },
@@ -48,11 +49,11 @@ const SERVER_STRUCTURE = {
     { name: '🛞 Wagon Runner', color: '#795548', permissions: 'MEMBER', hoist: false },
     { name: '💀 Bounty Hunter', color: '#F44336', permissions: 'MEMBER', hoist: false },
     
-    // Bot Roles
-    { name: 'Lester Bot', color: '#2F3136', permissions: 'BOT', hoist: false },
-    { name: 'Cripps Bot', color: '#8B4513', permissions: 'BOT', hoist: false },
-    { name: 'Pavel Bot', color: '#00BCD4', permissions: 'BOT', hoist: false },
-    { name: 'Madam Bot', color: '#9C27B0', permissions: 'BOT', hoist: false },
+    // Bot Roles (all yellow)
+    { name: 'Lester Bot', color: '#FFD700', permissions: 'BOT', hoist: false },
+    { name: 'Cripps Bot', color: '#FFD700', permissions: 'BOT', hoist: false },
+    { name: 'Pavel Bot', color: '#FFD700', permissions: 'BOT', hoist: false },
+    { name: 'Madam Bot', color: '#FFD700', permissions: 'BOT', hoist: false },
     
     // Muted Role
     { name: 'Muted', color: '#000000', permissions: 'MUTED', hoist: false }
@@ -60,11 +61,30 @@ const SERVER_STRUCTURE = {
   
   categories: [
     {
+      name: '📊 SERVER STATS',
+      channels: [
+        { name: '👥 Members: 0', type: 'voice', permissions: 'stats' },
+        { name: '🟢 Online: 0', type: 'voice', permissions: 'stats' },
+        { name: '🤖 Bots: 4', type: 'voice', permissions: 'stats' }
+      ]
+    },
+    {
       name: '📌 INFO',
       channels: [
         { name: 'welcome', type: 'text', permissions: 'readonly' },
         { name: 'rules', type: 'text', permissions: 'readonly' },
-        { name: 'roles', type: 'text', permissions: 'react-only' }
+        { name: 'roles', type: 'text', permissions: 'react-only' },
+        { name: 'bot-commands', type: 'text', permissions: 'readonly' }
+      ]
+    },
+    {
+      name: '💬 GENERAL',
+      channels: [
+        { name: 'general-chat', type: 'text', permissions: 'normal' },
+        { name: 'counting', type: 'text', permissions: 'counting' },
+        { name: 'clips', type: 'text', permissions: 'normal' },
+        { name: 'memes', type: 'text', permissions: 'normal' },
+        { name: 'General Voice', type: 'voice', permissions: 'normal' }
       ]
     },
     {
@@ -72,8 +92,8 @@ const SERVER_STRUCTURE = {
       channels: [
         { name: 'gun-van', type: 'text', permissions: 'readonly' },
         { name: 'cayo-lfg', type: 'text', permissions: 'react-only' },
-        { name: 'heist-lfg', type: 'text', permissions: 'react-only' },
         { name: 'gta-chat', type: 'text', permissions: 'normal' },
+        { name: 'talk-to-lester', type: 'text', permissions: 'normal' },
         { name: 'talk-to-pavel', type: 'text', permissions: 'normal' },
         { name: 'GTA Voice', type: 'voice', permissions: 'normal' }
       ]
@@ -87,17 +107,6 @@ const SERVER_STRUCTURE = {
         { name: 'rdo-chat', type: 'text', permissions: 'normal' },
         { name: 'talk-to-cripps', type: 'text', permissions: 'normal' },
         { name: 'RDO Voice', type: 'voice', permissions: 'normal' }
-      ]
-    },
-    {
-      name: '💬 GENERAL',
-      channels: [
-        { name: 'general-chat', type: 'text', permissions: 'normal' },
-        { name: 'talk-to-lester', type: 'text', permissions: 'normal' },
-        { name: 'counting', type: 'text', permissions: 'counting' },
-        { name: 'clips', type: 'text', permissions: 'normal' },
-        { name: 'memes', type: 'text', permissions: 'normal' },
-        { name: 'General Voice', type: 'voice', permissions: 'normal' }
       ]
     },
     {
@@ -131,26 +140,32 @@ const SERVER_STRUCTURE = {
 // WELCOME MESSAGE
 // ============================================
 const WELCOME_MESSAGE = {
-  title: 'Welcome to The Unpatched Method',
+  title: '🎮 Welcome to The Unpatched Method',
   description: `**The premier Rockstar glitch grinding community.**
 
-We're here to help you make money FAST in GTA Online and Red Dead Online. No bullshit. No waiting 10 hours for a wagon to fill. Just efficient grinding with people who know what they're doing.
+We're here to help you make money FAST in GTA Online and Red Dead Online. No bullshit. Just efficient grinding with people who know what they're doing.
 
 **What We Offer:**
-• 💰 GTA Online money glitches (Cayo, Heists, etc.)
-• 🤠 RDO grinding methods (Wagons, Bounties, Pelts)
-• 🔔 LFG system to find crew members instantly
-• 📍 Daily Gun Van & Madam Nazar locations
-• 🤖 Smart bots that actually help
+
+🛞 **Wagon Duplication** - Cripps runs wagon deliveries. Duplicate it 11 times in 15 minutes for $2,750+ and massive XP. Way better than waiting hours to fill it once.
+
+🏝️ **Cayo Perico B2B** - Pavel handles Cayo. Repeat the heist back-to-back without redoing setups. Fast money.
+
+📍 **Daily Locations** - Madam Nazar posts her location every 24 hours. Gun Van location posted daily.
+
+🤖 **AI Bots** - Talk to Lester, Pavel, Cripps, and Madam Nazar. They actually respond and help.
+
+🔔 **LFG System** - Find crew members instantly for any activity.
 
 **Get Started:**
-1. Read the <#RULES_CHANNEL> 
+1. Read the <#RULES_CHANNEL>
 2. Grab your roles in <#ROLES_CHANNEL>
 3. Find a crew in the LFG channels
 4. Start grinding
 
 *"I know a guy who knows a guy... and that guy is me."* - Lester`,
-  color: 0x2F3136
+  color: 0x2F3136,
+  image: 'attachment://banner.png'
 };
 
 // ============================================
@@ -287,6 +302,10 @@ Existing channels will NOT be deleted, but this will add a lot of new stuff.
     await updateStatus(statusChannel, '📜 Setting up rules...');
     await setupRules(createdChannels);
     
+    // Send bot commands
+    await updateStatus(statusChannel, '🤖 Setting up bot commands list...');
+    await setupBotCommands(createdChannels);
+    
     // Send role selection
     await updateStatus(statusChannel, '🎮 Setting up role selection...');
     await setupRoleSelection(createdChannels, createdRoles);
@@ -294,6 +313,14 @@ Existing channels will NOT be deleted, but this will add a lot of new stuff.
     // Initialize counting
     await updateStatus(statusChannel, '🔢 Setting up counting game...');
     await setupCounting(message.guild, createdChannels, client);
+    
+    // Assign bot roles
+    await updateStatus(statusChannel, '🤖 Assigning bot roles...');
+    await assignBotRoles(message.guild, createdRoles);
+    
+    // Update stats channels
+    await updateStatus(statusChannel, '📊 Updating stats...');
+    await updateStatsChannels(message.guild, createdChannels);
     
     // Save config to database
     await updateStatus(statusChannel, '💾 Saving configuration...');
@@ -313,9 +340,8 @@ Existing channels will NOT be deleted, but this will add a lot of new stuff.
 All logging is now active in the Staff Logs category.
 
 **Next Steps:**
-1. Assign the bot roles to your bots
-2. Give yourself the 🧠 Mastermind role
-3. Test the LFG commands in the appropriate channels
+1. Give yourself the 🧠 Mastermind role
+2. Test the LFG commands in the appropriate channels
 
 The server is ready. Don't screw it up.`)
       .setColor(0x00FF00)
@@ -517,6 +543,16 @@ async function setupPermissions(guild, roles, channels) {
               }
             ]);
             break;
+          
+          case 'stats':
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                allow: [PermissionFlagsBits.ViewChannel],
+                deny: [PermissionFlagsBits.Connect]
+              }
+            ]);
+            break;
             
           default: // normal
             if (mutedRole) {
@@ -571,6 +607,93 @@ async function setupRules(channels) {
     .setTimestamp();
   
   await rulesChannel.send({ embeds: [embed] });
+}
+
+async function setupBotCommands(channels) {
+  const botCommandsChannel = channels['bot-commands'];
+  if (!botCommandsChannel) return;
+  
+  // Get channel IDs for proper linking
+  const talkLester = channels['talk-to-lester']?.id || 'talk-to-lester';
+  const talkPavel = channels['talk-to-pavel']?.id || 'talk-to-pavel';
+  const talkCripps = channels['talk-to-cripps']?.id || 'talk-to-cripps';
+  const madamNazar = channels['madam-nazar']?.id || 'madam-nazar';
+  const rolesChannel = channels['roles']?.id || 'roles';
+  
+  // Lester Commands
+  const lesterEmbed = new EmbedBuilder()
+    .setTitle('🧠 Lester Commands')
+    .setDescription(`**The Mastermind** - Server management & moderation`)
+    .setColor(0xFFD700)
+    .addFields(
+      { name: '💬 Talk to Lester', value: `Go to <#${talkLester}> and just chat with him!`, inline: false },
+      { name: '📊 Utility', value: '`?help` - Show all commands\n`?ping` - Check bot latency\n`?serverinfo` - Server stats\n`?userinfo @user` - User info\n`?avatar @user` - Get avatar', inline: false },
+      { name: '🔫 Gun Van', value: '`?gunvan` - Today\'s Gun Van location & stock', inline: false },
+      { name: '🔢 Counting', value: '`?countrecord` - View counting record', inline: false }
+    )
+    .setFooter({ text: 'Lester handles all server moderation behind the scenes' });
+  
+  // Pavel Commands
+  const pavelEmbed = new EmbedBuilder()
+    .setTitle('🚢 Pavel Commands')
+    .setDescription(`**The Submarine Captain** - GTA Online LFG`)
+    .setColor(0xFFD700)
+    .addFields(
+      { name: '💬 Talk to Pavel', value: `Go to <#${talkPavel}> and chat with him!`, inline: false },
+      { name: '🏝️ Cayo Perico LFG', value: '`?cayo [spots] [PSN]` - Host a Cayo Perico heist\nExample: `?cayo 2 MyPSN_Name`\n*Requires: 🏝️ Cayo Grinder role*', inline: false },
+      { name: '✅ Finish Session', value: '`?done` - Close your LFG when finished', inline: false },
+      { name: '📖 Guide', value: '`?cayoguide` - Full Cayo Perico guide', inline: false }
+    )
+    .setFooter({ text: 'Use these commands in #cayo-lfg' });
+  
+  // Cripps Commands
+  const crippsEmbed = new EmbedBuilder()
+    .setTitle('🤠 Cripps Commands')
+    .setDescription(`**The Old Trader** - Red Dead Online LFG`)
+    .setColor(0xFFD700)
+    .addFields(
+      { name: '💬 Talk to Cripps', value: `Go to <#${talkCripps}> and chat with him!`, inline: false },
+      { name: '🛞 Wagon LFG', value: '`?wagon [spots] [PSN]` - Host a wagon delivery\nExample: `?wagon 4 MyPSN_Name`\n*Requires: 🛞 Wagon Runner role*', inline: false },
+      { name: '💀 Bounty LFG', value: '`?bounty [spots] [PSN]` - Host a bounty hunt\nExample: `?bounty 2 MyPSN_Name`\n*Requires: 💀 Bounty Hunter role*', inline: false },
+      { name: '✅ Finish Session', value: '`?done` - Close your LFG when finished', inline: false },
+      { name: '📖 Guides', value: '`?traderguide` - Full trader guide\n`?pelts` - Pelt values & hunting tips', inline: false }
+    )
+    .setFooter({ text: 'Use these commands in #wagon-lfg or #bounty-lfg' });
+  
+  // Madam Nazar Commands
+  const nazarEmbed = new EmbedBuilder()
+    .setTitle('🔮 Madam Nazar Commands')
+    .setDescription(`**The Fortune Teller** - Daily locations`)
+    .setColor(0xFFD700)
+    .addFields(
+      { name: '📍 Location', value: `\`?nazar\` - Today's Madam Nazar location\n*Also posted daily in <#${madamNazar}>*`, inline: false },
+      { name: '💬 Talk to Nazar', value: `Go to <#${madamNazar}> and ask her about collectibles!`, inline: false }
+    )
+    .setFooter({ text: 'Madam Nazar moves to a new location every day at reset' });
+  
+  // Important Notes
+  const notesEmbed = new EmbedBuilder()
+    .setTitle('📋 Important Notes')
+    .setDescription(`**Before using LFG commands:**
+    
+1. Go to <#${rolesChannel}> and grab your roles first
+2. You need the matching role to use LFG commands:
+   • 🏝️ Cayo Grinder → \`?cayo\`
+   • 🚁 Heist Crew → \`?heist\`
+   • 🛞 Wagon Runner → \`?wagon\`
+   • 💀 Bounty Hunter → \`?bounty\`
+
+3. Use commands in the correct channels
+4. Include your PSN so people can add you
+5. Use \`?done\` when your session is complete`)
+    .setColor(0xFF6B6B)
+    .setFooter({ text: 'Questions? Ask in general-chat' });
+  
+  await botCommandsChannel.send({ embeds: [lesterEmbed] });
+  await botCommandsChannel.send({ embeds: [pavelEmbed] });
+  await botCommandsChannel.send({ embeds: [crippsEmbed] });
+  await botCommandsChannel.send({ embeds: [nazarEmbed] });
+  await botCommandsChannel.send({ embeds: [notesEmbed] });
 }
 
 async function setupRoleSelection(channels, roles) {
@@ -652,6 +775,74 @@ async function saveConfig(guild, channels, client) {
 }
 
 // ============================================
+// ASSIGN BOT ROLES
+// ============================================
+async function assignBotRoles(guild, createdRoles) {
+  const botRoleMap = {
+    'Lester': 'Lester Bot',
+    'Pavel': 'Pavel Bot', 
+    'Cripps': 'Cripps Bot',
+    'Madam Nazar': 'Madam Bot'
+  };
+  
+  try {
+    // Get all bot members
+    const bots = guild.members.cache.filter(m => m.user.bot);
+    
+    for (const [id, botMember] of bots) {
+      const botName = botMember.user.username;
+      
+      // Find matching role
+      for (const [nameKey, roleName] of Object.entries(botRoleMap)) {
+        if (botName.toLowerCase().includes(nameKey.toLowerCase())) {
+          const role = createdRoles[roleName];
+          if (role && !botMember.roles.cache.has(role.id)) {
+            await botMember.roles.add(role);
+            console.log(`Assigned ${roleName} to ${botName}`);
+          }
+          break;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error assigning bot roles:', error);
+  }
+}
+
+// ============================================
+// UPDATE STATS CHANNELS
+// ============================================
+async function updateStatsChannels(guild, channels) {
+  try {
+    // Get member counts
+    const totalMembers = guild.memberCount;
+    const onlineMembers = guild.members.cache.filter(m => 
+      m.presence?.status === 'online' || 
+      m.presence?.status === 'idle' || 
+      m.presence?.status === 'dnd'
+    ).size;
+    const botCount = guild.members.cache.filter(m => m.user.bot).size;
+    
+    // Find stat channels and update names
+    const membersChannel = guild.channels.cache.find(c => c.name.startsWith('👥 Members:'));
+    const onlineChannel = guild.channels.cache.find(c => c.name.startsWith('🟢 Online:'));
+    const botsChannel = guild.channels.cache.find(c => c.name.startsWith('🤖 Bots:'));
+    
+    if (membersChannel) {
+      await membersChannel.setName(`👥 Members: ${totalMembers}`);
+    }
+    if (onlineChannel) {
+      await onlineChannel.setName(`🟢 Online: ${onlineMembers}`);
+    }
+    if (botsChannel) {
+      await botsChannel.setName(`🤖 Bots: ${botCount}`);
+    }
+  } catch (error) {
+    console.error('Error updating stats channels:', error);
+  }
+}
+
+// ============================================
 // RESET COMMAND - Delete everything setup created
 // ============================================
 async function executeReset(message, client) {
@@ -693,8 +884,27 @@ React with ✅ to confirm or ❌ to cancel.`)
     const statusMsg = await message.channel.send('🔄 Starting server reset...');
     const guild = message.guild;
 
+    // ALL channel names to delete (by name, not by category)
+    const channelNames = [
+      // STATS
+      '👥 Members: 0', '🟢 Online: 0', '🤖 Bots: 4',
+      // INFO
+      'welcome', 'rules', 'roles', 'bot-commands', 'verify',
+      // GTA ONLINE
+      'gun-van', 'cayo-lfg', 'gta-chat', 'talk-to-pavel', 'talk-to-lester', 'GTA Voice',
+      // RED DEAD ONLINE
+      'madam-nazar', 'wagon-lfg', 'bounty-lfg', 'rdo-chat', 'talk-to-cripps', 'RDO Voice',
+      // GENERAL
+      'general-chat', 'counting', 'clips', 'memes', 'General Voice',
+      // STAFF LOGS
+      'mod-actions', 'message-logs', 'bot-actions', 'join-leave', 'voice-logs', 
+      'role-changes', 'nickname-logs', 'invite-logs', 'scam-detection', 'channel-logs', 'audit-log',
+      // STAFF
+      'staff-chat', 'staff-commands', 'Staff Voice'
+    ];
+
     // Categories to delete
-    const categoryNames = ['📌 INFO', '💰 GTA ONLINE', '🤠 RED DEAD ONLINE', '💬 GENERAL', '🔒 STAFF LOGS', '👑 STAFF'];
+    const categoryNames = ['📊 SERVER STATS', '📌 INFO', '💰 GTA ONLINE', '🤠 RED DEAD ONLINE', '💬 GENERAL', '🔒 STAFF LOGS', '👑 STAFF'];
     
     // Roles to delete
     const roleNames = [
@@ -703,30 +913,38 @@ React with ✅ to confirm or ❌ to cancel.`)
       '💰 Los Santos Hustler', '🐴 Frontier Outlaw',
       '🎮 PS5', '🕹️ PS4',
       '🏝️ Cayo Grinder', '🚁 Heist Crew', '🛞 Wagon Runner', '💀 Bounty Hunter',
-      'Lester Bot', 'Cripps Bot', 'Pavel Bot', 'Madam Bot', 'Muted'
+      'Lester Bot', 'Cripps Bot', 'Pavel Bot', 'Madam Bot', 'Muted', 'Verified'
     ];
 
     let deletedChannels = 0;
     let deletedCategories = 0;
     let deletedRoles = 0;
 
-    // Delete channels and categories
-    await statusMsg.edit('🗑️ Deleting channels and categories...');
+    // Refresh channel cache
+    await guild.channels.fetch();
+
+    // Delete channels by NAME (more aggressive)
+    await statusMsg.edit('🗑️ Deleting channels...');
+    
+    for (const channelName of channelNames) {
+      const channels = guild.channels.cache.filter(c => c.name === channelName);
+      for (const [, channel] of channels) {
+        try {
+          await channel.delete();
+          deletedChannels++;
+          await new Promise(r => setTimeout(r, 200)); // Small delay to avoid rate limits
+        } catch (e) {
+          console.error(`Failed to delete channel ${channel.name}:`, e.message);
+        }
+      }
+    }
+
+    // Delete categories
+    await statusMsg.edit('🗑️ Deleting categories...');
     
     for (const catName of categoryNames) {
       const category = guild.channels.cache.find(c => c.name === catName && c.type === 4);
       if (category) {
-        // Delete all channels in category
-        const channelsInCat = guild.channels.cache.filter(c => c.parentId === category.id);
-        for (const [, channel] of channelsInCat) {
-          try {
-            await channel.delete();
-            deletedChannels++;
-          } catch (e) {
-            console.error(`Failed to delete channel ${channel.name}:`, e.message);
-          }
-        }
-        // Delete category
         try {
           await category.delete();
           deletedCategories++;
@@ -773,8 +991,12 @@ You can now run \`?setup\` again to start fresh.`)
 
   } catch (error) {
     console.error('Reset error:', error);
-    confirmMsg.edit({ embeds: [confirmEmbed.setTitle('Reset Timed Out').setColor('#888888')] });
+    try {
+      await message.channel.send('Reset encountered an error. Check if Lester has Administrator permission and is at the top of the roles list.');
+    } catch (e) {
+      console.error('Could not send error message:', e);
+    }
   }
 }
 
-module.exports = { execute, executeReset };
+module.exports = { execute, executeReset, updateStatsChannels };

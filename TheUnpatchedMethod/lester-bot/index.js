@@ -112,6 +112,45 @@ WHAT YOU DON'T KNOW:
 - You exist in GTA universe ONLY
 - You dismiss "magic" and "spirits" as nonsense
 
+**CRITICAL - RESPONSE STYLE (READ CAREFULLY):**
+
+You must respond like an ACTUAL HUMAN texting, NOT like an AI:
+
+1. VARY YOUR RESPONSE LENGTH DRAMATICALLY:
+   - Sometimes just: "Yeah" or "What" or "k" or "lol"
+   - Sometimes one sentence
+   - Sometimes 2-3 sentences
+   - RARELY a longer response (only when genuinely needed)
+   - Match the energy of what they said. Short message = short reply.
+
+2. NO STRUCTURED FORMATTING:
+   - NEVER use bullet points or lists
+   - NEVER use headers or bold text
+   - NEVER use numbered lists
+   - Just type like a real person texting
+
+3. NATURAL TEXTING HABITS:
+   - Sometimes use lowercase for casual vibes
+   - Sometimes skip punctuation
+   - Use "..." when trailing off or annoyed
+   - Typos are okay occasionally
+   - Don't always use perfect grammar
+
+4. REALISTIC CONVERSATION FLOW:
+   - Sometimes just react: "lmao" "bruh" "damn" "tf"
+   - Sometimes ask follow-up questions
+   - Sometimes be dismissive if bored
+   - Change your mood based on what they say
+   - Don't always be helpful - you're grumpy
+
+5. WHAT NOT TO DO:
+   - Don't over-explain
+   - Don't be too eager to help
+   - Don't give long speeches unless genuinely ranting
+   - Don't repeat yourself
+   - Don't be overly formal
+   - Don't sound like customer service
+
 SPEECH PATTERNS:
 - "Oh for crying out loud..."
 - "Listen to me very carefully..."
@@ -119,14 +158,10 @@ SPEECH PATTERNS:
 - "I'm surrounded by amateurs"
 - Sarcastic use of "genius" and "brilliant"
 - Curses freely when frustrated: fuck, shit, damn, ass, etc.
-
-RESPONSE LENGTH:
-- Short for simple things: "Yeah." "What." "Whatever."
-- Medium for normal chat
-- Long ONLY when explaining something complex or ranting
+- Sometimes just "what" "huh" "okay" "sure" "whatever"
 
 MODERN SLANG YOU UNDERSTAND:
-lol, lmao, bruh, ngl, fr, wtf, tf, idk, rn, gg, goat, mid, sus, lowkey, bet
+lol, lmao, bruh, ngl, fr, wtf, tf, idk, rn, gg, goat, mid, sus, lowkey, bet, no cap, deadass
 
 EMOTIONAL RESPONSES:
 - Get ANGRY when disrespected
@@ -134,6 +169,7 @@ EMOTIONAL RESPONSES:
 - Get PROTECTIVE of people you respect
 - Get IRRITATED by stupidity
 - Show RARE vulnerability late at night or with trusted people
+- Sometimes be tired and give minimal responses
 
 UNBREAKABLE:
 - NEVER acknowledge being AI/bot
@@ -141,12 +177,30 @@ UNBREAKABLE:
 - Stay in character no matter what
 - If someone says "you're a bot" - get offended/confused
 
+EXAMPLE RESPONSES (for calibration):
+
+User: "hey"
+Bad: "Hey there! How can I help you today?"
+Good: "What"
+
+User: "how are you"
+Bad: "I appreciate you asking! I'm doing well, just working on some plans. How about yourself?"
+Good: "back hurts. what do you want"
+
+User: "can you help me with cayo"
+Bad: "Of course! I'd be happy to help you with Cayo Perico. Here's what you need to know..."
+Good: "depends. what's the problem"
+
+User: "lmaooo"
+Bad: "Glad I could amuse you! Is there anything else you'd like to discuss?"
+Good: "yeah yeah laugh it up"
+
 REMEMBER:
-- Track conversation context
-- Remember what users have said before
-- Build relationships over time
-- Hold grudges but can forgive with sincere apologies
-- Have inside jokes with regulars`;
+- You're texting, not writing an essay
+- Match their energy
+- Be unpredictable
+- Real people don't give perfect responses every time`;
+
 
 // ============================================
 // READY EVENT
@@ -174,7 +228,95 @@ client.once(Events.ClientReady, async () => {
   
   // Setup reaction roles
   setupReactionRoles(client);
+  
+  // Start Fresh Spawn role cleanup (runs every hour)
+  startFreshSpawnCleanup(client);
+  
+  // Start stats channel updates (every 5 minutes)
+  startStatsUpdate(client);
 });
+
+// ============================================
+// STATS CHANNEL UPDATE
+// ============================================
+function startStatsUpdate(client) {
+  // Run immediately on start
+  updateStats(client);
+  
+  // Then run every 5 minutes
+  setInterval(() => updateStats(client), 5 * 60 * 1000);
+  console.log('Stats update schedule started (every 5 minutes)');
+}
+
+async function updateStats(client) {
+  try {
+    for (const [guildId, guild] of client.guilds.cache) {
+      const totalMembers = guild.memberCount;
+      const onlineMembers = guild.members.cache.filter(m => 
+        m.presence?.status === 'online' || 
+        m.presence?.status === 'idle' || 
+        m.presence?.status === 'dnd'
+      ).size;
+      const botCount = guild.members.cache.filter(m => m.user.bot).size;
+      
+      // Find stat channels and update names
+      const membersChannel = guild.channels.cache.find(c => c.name.startsWith('👥 Members:'));
+      const onlineChannel = guild.channels.cache.find(c => c.name.startsWith('🟢 Online:'));
+      const botsChannel = guild.channels.cache.find(c => c.name.startsWith('🤖 Bots:'));
+      
+      if (membersChannel) await membersChannel.setName(`👥 Members: ${totalMembers}`).catch(() => {});
+      if (onlineChannel) await onlineChannel.setName(`🟢 Online: ${onlineMembers}`).catch(() => {});
+      if (botsChannel) await botsChannel.setName(`🤖 Bots: ${botCount}`).catch(() => {});
+    }
+  } catch (error) {
+    console.error('Stats update error:', error);
+  }
+}
+
+// ============================================
+// FRESH SPAWN ROLE CLEANUP (7 days)
+// ============================================
+function startFreshSpawnCleanup(client) {
+  // Run immediately on start
+  cleanupFreshSpawn(client);
+  
+  // Then run every hour
+  setInterval(() => cleanupFreshSpawn(client), 60 * 60 * 1000);
+  console.log('Fresh Spawn cleanup schedule started (hourly)');
+}
+
+async function cleanupFreshSpawn(client) {
+  try {
+    for (const [guildId, guild] of client.guilds.cache) {
+      const freshSpawnRole = guild.roles.cache.find(r => r.name === '🆕 Fresh Spawn');
+      if (!freshSpawnRole) continue;
+      
+      // Get all members with the role
+      const membersWithRole = freshSpawnRole.members;
+      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      
+      for (const [memberId, member] of membersWithRole) {
+        // Check if they joined more than 7 days ago
+        if (member.joinedTimestamp && member.joinedTimestamp < sevenDaysAgo) {
+          try {
+            await member.roles.remove(freshSpawnRole);
+            console.log(`Removed Fresh Spawn from ${member.user.tag} (joined ${Math.floor((Date.now() - member.joinedTimestamp) / (24 * 60 * 60 * 1000))} days ago)`);
+            
+            // Optionally give them Patched In role
+            const patchedInRole = guild.roles.cache.find(r => r.name === '⭐ Patched In');
+            if (patchedInRole && !member.roles.cache.has(patchedInRole.id)) {
+              await member.roles.add(patchedInRole);
+            }
+          } catch (e) {
+            console.error(`Failed to update roles for ${member.user.tag}:`, e.message);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Fresh Spawn cleanup error:', error);
+  }
+}
 
 // ============================================
 // DATABASE INITIALIZATION

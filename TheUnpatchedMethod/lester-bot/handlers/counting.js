@@ -112,11 +112,11 @@ async function resetCount(message, client, data, reason) {
     `, [message.guild.id]);
     
     // Remove The #1 role from everyone
-    const theOneRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
-    if (theOneRole) {
-      const members = theOneRole.members;
+    const counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    if (counterRole) {
+      const members = counterRole.members;
       for (const [id, member] of members) {
-        await member.roles.remove(theOneRole).catch(() => {});
+        await member.roles.remove(counterRole).catch(() => {});
       }
     }
     
@@ -142,29 +142,29 @@ async function resetCount(message, client, data, reason) {
 }
 
 // ============================================
-// UPDATE THE #1 ROLE
+// UPDATE COUNTER ROLE
 // ============================================
 async function updateTheOneRole(message, client) {
   try {
-    const theOneRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
-    if (!theOneRole) return;
+    const counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    if (!counterRole) return;
     
     // Remove from everyone else
-    const currentHolders = theOneRole.members;
+    const currentHolders = counterRole.members;
     for (const [id, member] of currentHolders) {
       if (id !== message.author.id) {
-        await member.roles.remove(theOneRole).catch(() => {});
+        await member.roles.remove(counterRole).catch(() => {});
       }
     }
     
     // Add to current counter
     const member = message.guild.members.cache.get(message.author.id);
-    if (member && !member.roles.cache.has(theOneRole.id)) {
-      await member.roles.add(theOneRole);
+    if (member && !member.roles.cache.has(counterRole.id)) {
+      await member.roles.add(counterRole);
     }
     
   } catch (error) {
-    console.error('Update The #1 role error:', error);
+    console.error('Update Counter role error:', error);
   }
 }
 
