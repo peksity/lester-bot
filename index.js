@@ -250,3 +250,5 @@ client.on(Events.MessageReactionAdd, async (r, u) => { if (u.bot) return; if (in
 client.on('error', console.error);
 process.on('unhandledRejection', console.error);
 client.login(process.env.DISCORD_TOKEN);
+
+// Deploy fix 2025-12-23 13:05:31
