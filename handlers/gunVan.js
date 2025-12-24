@@ -1,10 +1,13 @@
 /**
  * GUN VAN HANDLER
- * Daily Gun Van location updates
+ * Daily Gun Van location updates - FIXED
  */
 
 const { EmbedBuilder } = require('discord.js');
 const cron = require('node-cron');
+
+// Hardcoded channel ID as fallback
+const GUN_VAN_CHANNEL_ID = '1453290796110315612';
 
 // ============================================
 // GUN VAN LOCATIONS
@@ -113,23 +116,37 @@ async function postDailyUpdate(client) {
     .setFooter({ text: 'Resets daily at 6 AM UTC' })
     .setTimestamp();
   
-  // Post to all configured gun-van channels
   try {
-    const configs = await client.db.query('SELECT * FROM server_config WHERE setup_complete = true');
+    // Method 1: Try hardcoded channel ID first
+    let channel = client.channels.cache.get(GUN_VAN_CHANNEL_ID);
     
-    for (const config of configs.rows) {
-      const channelId = config.log_channels['gun-van'];
-      if (!channelId) continue;
-      
-      const guild = client.guilds.cache.get(config.guild_id);
-      if (!guild) continue;
-      
-      const channel = guild.channels.cache.get(channelId);
-      if (!channel) continue;
-      
-      // Delete previous day's message (keep channel clean)
+    // Method 2: Try database lookup
+    if (!channel && client.db) {
       try {
-        const messages = await channel.messages.fetch({ limit: 5 });
+        const result = await client.db.query(
+          "SELECT value FROM server_config WHERE key = 'gun_van_channel'"
+        );
+        if (result.rows[0]) {
+          channel = client.channels.cache.get(result.rows[0].value);
+        }
+      } catch (e) {}
+    }
+    
+    // Method 3: Search all guilds for gun-van channel
+    if (!channel) {
+      for (const guild of client.guilds.cache.values()) {
+        const foundChannel = guild.channels.cache.find(c => c.name === 'gun-van');
+        if (foundChannel) {
+          channel = foundChannel;
+          break;
+        }
+      }
+    }
+    
+    if (channel) {
+      // Delete previous day's messages
+      try {
+        const messages = await channel.messages.fetch({ limit: 10 });
         const botMessages = messages.filter(m => m.author.id === client.user.id);
         for (const [id, msg] of botMessages) {
           await msg.delete().catch(() => {});
@@ -137,9 +154,12 @@ async function postDailyUpdate(client) {
       } catch (e) {}
       
       await channel.send({ embeds: [embed] });
+      console.log('[GUN VAN] Daily location posted:', data.location.name);
+    } else {
+      console.log('[GUN VAN] Could not find gun-van channel');
     }
   } catch (error) {
-    console.error('Error posting Gun Van update:', error);
+    console.error('[GUN VAN] Error posting update:', error.message);
   }
 }
 
@@ -149,16 +169,19 @@ async function postDailyUpdate(client) {
 function startSchedule(client) {
   // Post at 6 AM UTC daily
   cron.schedule('0 6 * * *', () => {
-    console.log('Posting daily Gun Van update...');
+    console.log('[GUN VAN] Posting daily update...');
     postDailyUpdate(client);
   }, {
     timezone: 'UTC'
   });
   
-  console.log('Gun Van schedule started (6 AM UTC daily)');
+  console.log('[GUN VAN] Schedule started (6 AM UTC daily)');
   
-  // Also post immediately on startup
-  setTimeout(() => postDailyUpdate(client), 5000);
+  // Also post immediately on startup (after 10 seconds)
+  setTimeout(() => {
+    console.log('[GUN VAN] Posting startup update...');
+    postDailyUpdate(client);
+  }, 10000);
 }
 
 module.exports = {

@@ -1,6 +1,7 @@
 /**
- * COUNTING HANDLER
+ * COUNTING HANDLER - FIXED
  * Manages the counting game with The #1 role
+ * Tug-of-war style - whoever has the last valid count holds The #1!
  */
 
 const { EmbedBuilder } = require('discord.js');
@@ -30,6 +31,17 @@ async function handle(message, client) {
   }
   
   try {
+    // Ensure table exists
+    await client.db.query(`
+      CREATE TABLE IF NOT EXISTS counting (
+        guild_id TEXT PRIMARY KEY,
+        current_count INTEGER DEFAULT 0,
+        last_counter TEXT,
+        record INTEGER DEFAULT 0,
+        last_message_id TEXT
+      )
+    `);
+    
     // Get current count
     const result = await client.db.query(
       'SELECT * FROM counting WHERE guild_id = $1',
@@ -71,10 +83,10 @@ async function handle(message, client) {
       WHERE guild_id = $5
     `, [newCount, message.author.id, newRecord, message.id, message.guild.id]);
     
-    // Update The #1 role
+    // Update The #1 role - TUG OF WAR! Whoever counted last gets it!
     await updateTheOneRole(message, client);
     
-    // React to confirm
+    // React with green checkmark to confirm
     await message.react('✅');
     
     // Milestone messages
@@ -89,8 +101,8 @@ async function handle(message, client) {
       message.channel.send(`📊 Count: **${newCount}** | Record: **${newRecord}**`);
     }
     
-    // New record
-    if (newCount > data.record && newCount === newRecord) {
+    // New record notification
+    if (newCount > data.record && newCount === newRecord && newCount > 10) {
       message.channel.send(`🏆 **NEW RECORD: ${newRecord}!**`);
     }
     
@@ -126,7 +138,7 @@ async function resetCount(message, client, data, reason) {
     // Send failure message
     const embed = new EmbedBuilder()
       .setTitle('💀 COUNT RESET')
-      .setDescription(`**${message.author.tag}** ruined it.\n\n${reason}`)
+      .setDescription(`**${message.author.username}** ruined it.\n\n${reason}`)
       .addFields(
         { name: 'Got to', value: `${data.current_count}`, inline: true },
         { name: 'Record', value: `${data.record}`, inline: true }
@@ -142,14 +154,17 @@ async function resetCount(message, client, data, reason) {
 }
 
 // ============================================
-// UPDATE COUNTER ROLE
+// UPDATE THE #1 ROLE - TUG OF WAR STYLE
 // ============================================
 async function updateTheOneRole(message, client) {
   try {
     const counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
-    if (!counterRole) return;
+    if (!counterRole) {
+      console.log('[COUNTING] Could not find 🏆 The #1 role');
+      return;
+    }
     
-    // Remove from everyone else
+    // Remove from everyone else first
     const currentHolders = counterRole.members;
     for (const [id, member] of currentHolders) {
       if (id !== message.author.id) {
@@ -157,10 +172,11 @@ async function updateTheOneRole(message, client) {
       }
     }
     
-    // Add to current counter
+    // Add to current counter (the person who just counted)
     const member = message.guild.members.cache.get(message.author.id);
     if (member && !member.roles.cache.has(counterRole.id)) {
       await member.roles.add(counterRole);
+      console.log(`[COUNTING] ${member.user.username} is now The #1`);
     }
     
   } catch (error) {
@@ -173,6 +189,17 @@ async function updateTheOneRole(message, client) {
 // ============================================
 async function getRecord(message, client) {
   try {
+    // Ensure table exists
+    await client.db.query(`
+      CREATE TABLE IF NOT EXISTS counting (
+        guild_id TEXT PRIMARY KEY,
+        current_count INTEGER DEFAULT 0,
+        last_counter TEXT,
+        record INTEGER DEFAULT 0,
+        last_message_id TEXT
+      )
+    `);
+    
     const result = await client.db.query(
       'SELECT * FROM counting WHERE guild_id = $1',
       [message.guild.id]
@@ -184,17 +211,28 @@ async function getRecord(message, client) {
     
     const data = result.rows[0];
     
+    // Find current holder of The #1
+    const counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    let currentHolder = 'Nobody';
+    if (counterRole && counterRole.members.size > 0) {
+      const holder = counterRole.members.first();
+      currentHolder = holder.user.username;
+    }
+    
     const embed = new EmbedBuilder()
       .setTitle('🔢 Counting Stats')
       .addFields(
         { name: 'Current Count', value: `${data.current_count}`, inline: true },
-        { name: 'Record', value: `${data.record}`, inline: true }
+        { name: 'Record', value: `${data.record}`, inline: true },
+        { name: '🏆 The #1', value: currentHolder, inline: true }
       )
-      .setColor(0x00FF00);
+      .setColor(0x00FF00)
+      .setFooter({ text: 'Keep counting to steal The #1 role!' });
     
     message.reply({ embeds: [embed] });
     
   } catch (error) {
+    console.error('Get record error:', error);
     message.reply("Couldn't fetch counting stats.");
   }
 }

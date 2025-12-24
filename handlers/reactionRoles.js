@@ -15,7 +15,6 @@ const REACTION_ROLES = {
   '5️⃣': '🎮 PlayStation 5',
   '4️⃣': '🎮 PlayStation 4',
   '🏝️': '🏝️ Cayo Grinder',
-  '🚁': '🚁 Heist Crew',
   '🛞': '🛞 Wagon Runner',
   '💀': '💀 Bounty Hunter'
 };

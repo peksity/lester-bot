@@ -97,7 +97,6 @@ const SERVER_STRUCTURE = {
     
     // LFG Ping Roles - These unlock specific channels
     { name: '🏝️ Cayo Grinder', color: '#00BCD4', permissions: 'MEMBER', hoist: false },   // Unlocks cayo-lfg, talk-to-pavel
-    { name: '🚁 Heist Crew', color: '#FF9800', permissions: 'MEMBER', hoist: false },
     { name: '🛞 Wagon Runner', color: '#795548', permissions: 'MEMBER', hoist: false },   // Unlocks wagon-lfg, talk-to-cripps
     { name: '💀 Bounty Hunter', color: '#F44336', permissions: 'MEMBER', hoist: false },  // Unlocks bounty-lfg, talk-to-police-chief
     
@@ -347,7 +346,6 @@ const ROLE_SELECTION = {
 
 **🔔 PING ME FOR (Unlocks extra channels):**
 🏝️ - **Cayo Perico** → Unlocks cayo-lfg & talk-to-pavel
-🚁 - **Other Heists** → Heist notifications
 🛞 - **Wagon Runs** → Unlocks wagon-lfg & talk-to-cripps
 💀 - **Bounty Hunting** → Unlocks bounty-lfg & talk-to-police-chief
 
@@ -355,11 +353,11 @@ const ROLE_SELECTION = {
 
 *React below to get your roles!*`,
   color: 0x00FF00,
-  reactions: ['💰', '🐴', '5️⃣', '4️⃣', '🏝️', '🚁', '🛞', '💀']
+  reactions: ['💰', '🐴', '5️⃣', '4️⃣', '🏝️', '🛞', '💀']
 };
 
 // ============================================
-// BOT COMMANDS - ALL 120+ FEATURES
+// BOT COMMANDS - 271 FEATURES
 // ============================================
 const BOT_COMMANDS_MESSAGE = {
   embeds: [
@@ -375,7 +373,7 @@ You don't need commands. Just talk naturally:
 
 Commands still work if you prefer them. The bots also chat freely - they have real personalities. Just talk to them!
 
-**NEXUS AI** • Every decision powered by AI`,
+**271 Features** • Every decision powered by AI`,
       color: 0x5865F2
     },
     
@@ -412,7 +410,7 @@ Lester runs NEXUS moderation - he watches everything and handles problems automa
           '• Auto voice channel creation\n' +
           '• Live payout tracking & run counter', inline: false },
         { name: '📊 Reputation', value: '`?rep [@user]` - Check player reputation', inline: true },
-        { name: '🎤 Voice', value: '`?voice join/leave`', inline: true }
+        { name: '🎤 Voice', value: 'Auto-created when you start a session!', inline: true }
       ],
       footer: { text: 'Dropdown menus • Platform matching • Earnings tracker' },
       color: 0xFFD700
@@ -435,7 +433,7 @@ Lester runs NEXUS moderation - he watches everything and handles problems automa
           '• Auto voice channel creation\n' +
           '• Dupe counter & earnings tracker', inline: false },
         { name: '📊 Reputation', value: '`?rep [@user]` - Check reputation', inline: true },
-        { name: '🎤 Voice', value: '`?voice join/leave`', inline: true }
+        { name: '🎤 Voice', value: 'Auto-created when you start a session!', inline: true }
       ],
       footer: { text: 'Dropdown menus • Platform matching • Earnings tracker' },
       color: 0x8B4513
@@ -475,7 +473,7 @@ Lester runs NEXUS moderation - he watches everything and handles problems automa
           '• Auto voice channel creation\n' +
           '• Cash & Gold tracking', inline: false },
         { name: '📊 Reputation', value: '`?rep [@user]` - Check reputation', inline: true },
-        { name: '🎤 Voice', value: '`?voice join/leave`', inline: true }
+        { name: '🎤 Voice', value: 'Auto-created when you start a session!', inline: true }
       ],
       footer: { text: 'Dropdown menus • Platform matching • Gold tracker' },
       color: 0xC0392B
@@ -515,7 +513,7 @@ Lester runs NEXUS moderation - he watches everything and handles problems automa
       fields: [
         { name: '1️⃣ Get Roles', value: '→ #roles\nPick your game, platform, and what you want pings for', inline: false },
         { name: '2️⃣ Find Crew', value: '→ Use LFG channels\nCommands work, but natural language works too!', inline: false },
-        { name: '3️⃣ Complete Sessions', value: '→ Use `?done`\nThis gives everyone +5 reputation', inline: false }
+        { name: '3️⃣ Complete Sessions', value: '→ Use the session buttons\nClick ✅ Complete to finish sessions and earn reputation', inline: false }
       ],
       footer: { text: 'The bots are AI-powered. They understand context, remember conversations, and have real personalities. Just talk to them!' },
       color: 0x2ECC71
@@ -615,6 +613,10 @@ Existing channels will NOT be deleted, but this will add a lot of new stuff.
     // Send bot commands
     await updateStatus(statusChannel, '🤖 Setting up bot commands list...');
     await setupBotCommands(createdChannels);
+    
+    // Send staff commands guide
+    await updateStatus(statusChannel, '👑 Setting up staff commands...');
+    await setupStaffCommands(createdChannels);
     
     // Send role selection
     await updateStatus(statusChannel, '🎮 Setting up role selection...');
@@ -1079,12 +1081,11 @@ We're a community of GTA Online and Red Dead Online players who grind together u
 
 **GTA Online:**
 • Cayo Perico B2B - Back-to-back heists without setups
-• Casino Heists - Big Con, S&S, Aggressive
-• All other heists with reliable crews
+• Advanced LFG with dropdown menus & payout tracking
 
 **Red Dead Online:**
 • Wagon Duplication - 11 dupes in 15 mins = $2,750+
-• Bounty Hunting - Regular and legendary bounties
+• Bounty Hunting - Regular and legendary bounties with gold tracking
 • Trader/Moonshine deliveries
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1093,7 +1094,7 @@ We're a community of GTA Online and Red Dead Online players who grind together u
 
 We have 5 AI-powered bots that help run the server:
 • **Lester** - Server management & moderation
-• **Pavel** - GTA heist LFG system
+• **Pavel** - GTA Cayo Perico LFG system
 • **Cripps** - RDO wagon LFG system
 • **Madam Nazar** - Daily location updates
 • **Police Chief** - Bounty LFG system
@@ -1116,7 +1117,7 @@ Check #role-unlocks after verifying to see all earnable roles!
 **🎮 PLATFORM**
 PlayStation 4 & PlayStation 5 only.`)
     .setColor(0x5865F2)
-    .setFooter({ text: 'The Unpatched Method - Est. 2024' })
+    .setFooter({ text: 'The Unpatched Method • 271 Features • Est. 2024' })
     .setTimestamp();
   
   await aboutChannel.send({ embeds: [embed] });
@@ -1208,7 +1209,7 @@ async function setupRoleInfo(channels) {
   // GTA Activity Ranks
   const gtaRanksEmbed = new EmbedBuilder()
     .setTitle('🎮 GTA HEIST RANKS')
-    .setDescription('**Earn these by completing Cayo Perico and other heists!**\nRanks are awarded automatically when you use `?done` after sessions.')
+    .setDescription('**Earn these by completing Cayo Perico heists!**\nRanks are awarded automatically when you complete sessions in #cayo-lfg.')
     .addFields(
       { name: '🐟 Small Fry', value: '5+ completions', inline: true },
       { name: '🦈 Shark Card Killer', value: '25+ completions', inline: true },
@@ -1216,7 +1217,7 @@ async function setupRoleInfo(channels) {
       { name: '👑 El Rubio\'s Nightmare', value: '100+ completions', inline: true }
     )
     .setColor(0x00CED1)
-    .setFooter({ text: 'Complete heists with ?done to earn these ranks!' });
+    .setFooter({ text: 'Complete sessions using the ✅ Complete button!' });
   
   await roleInfoChannel.send({ embeds: [gtaRanksEmbed] });
   await new Promise(r => setTimeout(r, 500));
@@ -1232,7 +1233,7 @@ async function setupRoleInfo(channels) {
       { name: '🏰 Cripps\' Partner', value: '100+ completions', inline: true }
     )
     .setColor(0x8B4513)
-    .setFooter({ text: 'Help with wagons and use ?done to rank up!' });
+    .setFooter({ text: 'Complete sessions using the ✅ Complete button!' });
   
   await roleInfoChannel.send({ embeds: [wagonRanksEmbed] });
   await new Promise(r => setTimeout(r, 500));
@@ -1248,7 +1249,7 @@ async function setupRoleInfo(channels) {
       { name: '💀 Grim Reaper', value: '100+ completions', inline: true }
     )
     .setColor(0xDC143C)
-    .setFooter({ text: 'Hunt bounties and use ?done to rank up!' });
+    .setFooter({ text: 'Complete sessions using the ✅ Complete button!' });
   
   await roleInfoChannel.send({ embeds: [bountyRanksEmbed] });
   await new Promise(r => setTimeout(r, 500));
@@ -1315,8 +1316,7 @@ async function setupRoleInfo(channels) {
         '💰 **Los Santos Hustler** - GTA Online player\n' +
         '🐴 **Frontier Outlaw** - Red Dead Online player', inline: false },
       { name: 'GTA LFG Roles', value: 
-        '🏝️ **Cayo Grinder** - Unlocks cayo-lfg & talk-to-pavel\n' +
-        '🚁 **Heist Crew** - Get pinged for heists', inline: false },
+        '🏝️ **Cayo Grinder** - Unlocks cayo-lfg & talk-to-pavel', inline: false },
       { name: 'RDO LFG Roles', value: 
         '🛞 **Wagon Runner** - Unlocks wagon-lfg & talk-to-cripps\n' +
         '💀 **Bounty Hunter** - Unlocks bounty-lfg & talk-to-police-chief', inline: false },
@@ -1411,7 +1411,7 @@ async function setupRoleUnlocks(channels) {
   // ========== GTA HEIST RANKS ==========
   const gtaEmbed = new EmbedBuilder()
     .setTitle('🎮 GTA HEIST RANKS')
-    .setDescription('*Earned by completing Cayo Perico & other heists*')
+    .setDescription('*Earned by completing Cayo Perico heists*')
     .addFields(
       { name: '🐟 Small Fry', value: '`5 completions`', inline: true },
       { name: '🦈 Shark Card Killer', value: '`25 completions`', inline: true },
@@ -1419,7 +1419,7 @@ async function setupRoleUnlocks(channels) {
       { name: '👑 El Rubio\'s Nightmare', value: '`100 completions`', inline: true }
     )
     .setColor(0x00CED1)
-    .setFooter({ text: 'Use ?cayo then ?done after completing sessions!' });
+    .setFooter({ text: 'Use ?cayo to start sessions • Click ✅ Complete when done!' });
   
   await roleUnlocksChannel.send({ embeds: [gtaEmbed] });
   await new Promise(r => setTimeout(r, 500));
@@ -1435,7 +1435,7 @@ async function setupRoleUnlocks(channels) {
       { name: '🏰 Cripps\' Partner', value: '`100 completions`', inline: true }
     )
     .setColor(0x8B4513)
-    .setFooter({ text: 'Use ?wagon then ?done after completing sessions!' });
+    .setFooter({ text: 'Use ?wagon to start sessions • Click ✅ Complete when done!' });
   
   await roleUnlocksChannel.send({ embeds: [wagonEmbed] });
   await new Promise(r => setTimeout(r, 500));
@@ -1451,7 +1451,7 @@ async function setupRoleUnlocks(channels) {
       { name: '💀 Grim Reaper', value: '`100 completions`', inline: true }
     )
     .setColor(0xDC143C)
-    .setFooter({ text: 'Use ?bounty then ?done after completing sessions!' });
+    .setFooter({ text: 'Use ?bounty to start sessions • Click ✅ Complete when done!' });
   
   await roleUnlocksChannel.send({ embeds: [bountyEmbed] });
   await new Promise(r => setTimeout(r, 500));
@@ -1575,6 +1575,168 @@ async function setupBotCommands(channels) {
     await botCommandsChannel.send({ embeds: [embed] });
     await new Promise(resolve => setTimeout(resolve, 500));
   }
+}
+
+async function setupStaffCommands(channels) {
+  const staffCommandsChannel = channels['staff-commands'];
+  if (!staffCommandsChannel) return;
+  
+  // Header
+  const headerEmbed = new EmbedBuilder()
+    .setTitle('👑 STAFF COMMAND CENTER')
+    .setDescription(`**Welcome to Staff Commands!**\n\nThis is your command reference. Your available commands depend on your role.\n\n*Use these powers wisely. Lester is always watching.*`)
+    .setColor(0xFFD700)
+    .setTimestamp();
+  
+  await staffCommandsChannel.send({ embeds: [headerEmbed] });
+  await new Promise(r => setTimeout(r, 500));
+  
+  // Owner Commands
+  const ownerEmbed = new EmbedBuilder()
+    .setTitle('👑 Owner - Full Control')
+    .setDescription('*Server owner has access to everything*')
+    .addFields(
+      { name: '⚙️ Server Setup', value: 
+        '`?setup` - Create entire server structure\n' +
+        '`?nuke` - Delete EVERYTHING (irreversible)\n' +
+        '`?reset` - Delete bot-created content only', inline: false },
+      { name: '🔨 All Moderation', value: 'Access to ALL commands below', inline: false }
+    )
+    .setColor(0xFFD700)
+    .setFooter({ text: '👑 Owner Only' });
+  
+  await staffCommandsChannel.send({ embeds: [ownerEmbed] });
+  await new Promise(r => setTimeout(r, 500));
+  
+  // Mastermind Commands
+  const mastermindEmbed = new EmbedBuilder()
+    .setTitle('🧠 Mastermind - Senior Admin')
+    .setDescription('*Full moderation access + server management*')
+    .addFields(
+      { name: '🔨 Moderation', value: 
+        '`?ban @user [reason]` - Permanent ban\n' +
+        '`?unban <user_id>` - Remove ban\n' +
+        '`?kick @user [reason]` - Kick from server\n' +
+        '`?mute @user [duration] [reason]` - Timeout user\n' +
+        '`?unmute @user` - Remove timeout\n' +
+        '`?warn @user <reason>` - Issue warning\n' +
+        '`?warnings @user` - View warnings', inline: false },
+      { name: '🧹 Management', value: 
+        '`?purge <amount>` - Delete messages (1-100)\n' +
+        '`?slowmode <seconds>` - Set slowmode\n' +
+        '`?lock` - Lock channel\n' +
+        '`?unlock` - Unlock channel', inline: false }
+    )
+    .setColor(0xFF0000)
+    .setFooter({ text: '🧠 Mastermind+' });
+  
+  await staffCommandsChannel.send({ embeds: [mastermindEmbed] });
+  await new Promise(r => setTimeout(r, 500));
+  
+  // Enforcer Commands
+  const enforcerEmbed = new EmbedBuilder()
+    .setTitle('🔫 Enforcer - Admin')
+    .setDescription('*Core moderation powers*')
+    .addFields(
+      { name: '🔨 Moderation', value: 
+        '`?kick @user [reason]` - Kick from server\n' +
+        '`?mute @user [duration] [reason]` - Timeout user\n' +
+        '`?unmute @user` - Remove timeout\n' +
+        '`?warn @user <reason>` - Issue warning\n' +
+        '`?warnings @user` - View warnings', inline: false },
+      { name: '🧹 Channel Control', value: 
+        '`?purge <amount>` - Delete messages (1-100)\n' +
+        '`?slowmode <seconds>` - Set slowmode\n' +
+        '`?lock` - Lock channel\n' +
+        '`?unlock` - Unlock channel', inline: false }
+    )
+    .setColor(0xFF4500)
+    .setFooter({ text: '🔫 Enforcer+' });
+  
+  await staffCommandsChannel.send({ embeds: [enforcerEmbed] });
+  await new Promise(r => setTimeout(r, 500));
+  
+  // Deputy Commands
+  const deputyEmbed = new EmbedBuilder()
+    .setTitle('🤠 Deputy - Moderator')
+    .setDescription('*Basic moderation tools*')
+    .addFields(
+      { name: '🔨 Moderation', value: 
+        '`?mute @user [duration] [reason]` - Timeout user (max 1 hour)\n' +
+        '`?unmute @user` - Remove timeout\n' +
+        '`?warn @user <reason>` - Issue warning\n' +
+        '`?warnings @user` - View warnings', inline: false },
+      { name: '🧹 Channel Control', value: 
+        '`?purge <amount>` - Delete messages (1-50)\n' +
+        '`?slowmode <seconds>` - Set slowmode (max 60s)', inline: false }
+    )
+    .setColor(0xFFA500)
+    .setFooter({ text: '🤠 Deputy+' });
+  
+  await staffCommandsChannel.send({ embeds: [deputyEmbed] });
+  await new Promise(r => setTimeout(r, 500));
+  
+  // Mechanic Commands
+  const mechanicEmbed = new EmbedBuilder()
+    .setTitle('🔧 Mechanic - Junior Mod')
+    .setDescription('*Helper-level moderation*')
+    .addFields(
+      { name: '🔨 Moderation', value: 
+        '`?warn @user <reason>` - Issue warning\n' +
+        '`?warnings @user` - View warnings', inline: false },
+      { name: '🧹 Channel Control', value: 
+        '`?purge <amount>` - Delete messages (1-25)', inline: false },
+      { name: '📋 Info Commands', value: 
+        '`?userinfo @user` - View user info\n' +
+        '`?serverinfo` - Server statistics', inline: false }
+    )
+    .setColor(0x00CED1)
+    .setFooter({ text: '🔧 Mechanic+' });
+  
+  await staffCommandsChannel.send({ embeds: [mechanicEmbed] });
+  await new Promise(r => setTimeout(r, 500));
+  
+  // Log Channels Guide
+  const logsEmbed = new EmbedBuilder()
+    .setTitle('📋 LOG CHANNELS GUIDE')
+    .setDescription('*What gets logged where*')
+    .addFields(
+      { name: '#nexus-log', value: 'AI decisions, auto-mod actions, threat detection', inline: true },
+      { name: '#mod-actions', value: 'Bans, kicks, mutes, warns by staff', inline: true },
+      { name: '#message-logs', value: 'Deleted & edited messages', inline: true },
+      { name: '#bot-actions', value: 'Bot activities, errors, status', inline: true },
+      { name: '#join-leave', value: 'Member joins and leaves', inline: true },
+      { name: '#verified-log', value: 'New member verifications', inline: true },
+      { name: '#voice-logs', value: 'Voice channel activity', inline: true },
+      { name: '#role-changes', value: 'Role assignments and removals', inline: true },
+      { name: '#nickname-logs', value: 'Nickname changes', inline: true },
+      { name: '#invite-logs', value: 'Invite creation and usage', inline: true },
+      { name: '#scam-detection', value: 'Flagged suspicious content', inline: true },
+      { name: '#channel-logs', value: 'Channel creates/deletes/edits', inline: true },
+      { name: '#audit-log', value: 'All server changes', inline: true },
+      { name: '#transcripts', value: 'Ticket/appeal transcripts', inline: true }
+    )
+    .setColor(0x3498DB)
+    .setFooter({ text: 'All logs are automated by Lester' });
+  
+  await staffCommandsChannel.send({ embeds: [logsEmbed] });
+  await new Promise(r => setTimeout(r, 500));
+  
+  // Useful Tips
+  const tipsEmbed = new EmbedBuilder()
+    .setTitle('💡 STAFF TIPS')
+    .setDescription('*Best practices for moderation*')
+    .addFields(
+      { name: '⚠️ Always Document', value: 'Include reasons for all mod actions - they\'re logged', inline: false },
+      { name: '🤖 Trust Lester', value: 'NEXUS AI handles most issues automatically. Only intervene if needed.', inline: false },
+      { name: '📊 Check History', value: 'Use `?warnings @user` before escalating punishments', inline: false },
+      { name: '🔍 Verify Reports', value: 'Check #message-logs to see context before acting', inline: false },
+      { name: '🤝 Be Fair', value: 'Apply rules consistently. Don\'t play favorites.', inline: false }
+    )
+    .setColor(0x9B59B6)
+    .setFooter({ text: 'Questions? Ask in #staff-chat' });
+  
+  await staffCommandsChannel.send({ embeds: [tipsEmbed] });
 }
 
 async function setupRoleSelection(channels, roles, client) {
@@ -1706,6 +1868,7 @@ async function updateStatsChannels(guild, channels) {
 
 async function saveConfig(guild, channels, roles, client) {
   const channelConfigs = [
+    // Log channels
     ['mod_log_channel', 'mod-actions'],
     ['message_log_channel', 'message-logs'],
     ['join_leave_channel', 'join-leave'],
@@ -1713,6 +1876,14 @@ async function saveConfig(guild, channels, roles, client) {
     ['voice_log_channel', 'voice-logs'],
     ['role_log_channel', 'role-changes'],
     ['nexus_log_channel', 'nexus-log'],
+    ['bot_actions_channel', 'bot-actions'],
+    ['nickname_log_channel', 'nickname-logs'],
+    ['invite_log_channel', 'invite-logs'],
+    ['scam_log_channel', 'scam-detection'],
+    ['channel_log_channel', 'channel-logs'],
+    ['audit_log_channel', 'audit-log'],
+    ['transcripts_channel', 'transcripts'],
+    // Other channels
     ['gun_van_channel', 'gun-van'],
     ['nazar_channel', 'madam-nazar'],
     ['general_channel', 'general-chat'],
@@ -1721,7 +1892,9 @@ async function saveConfig(guild, channels, roles, client) {
     ['roles_channel', 'roles'],
     ['cayo_lfg_channel', 'cayo-lfg'],
     ['wagon_lfg_channel', 'wagon-lfg'],
-    ['bounty_lfg_channel', 'bounty-lfg']
+    ['bounty_lfg_channel', 'bounty-lfg'],
+    ['counting_channel', 'counting'],
+    ['staff_commands_channel', 'staff-commands']
   ];
   
   for (const [key, channelName] of channelConfigs) {
@@ -1741,15 +1914,32 @@ async function saveConfig(guild, channels, roles, client) {
   
   // Save role IDs
   const roleConfigs = [
+    // Staff roles
+    ['owner_role', '👑 Owner'],
+    ['mastermind_role', '🧠 Mastermind'],
+    ['enforcer_role', '🔫 Enforcer'],
+    ['deputy_role', '🤠 Deputy'],
+    ['mechanic_role', '🔧 Mechanic'],
+    ['vip_role', '💜 VIP'],
+    // Member roles
     ['verified_role', '✅ Verified'],
     ['muted_role', 'Muted'],
+    ['fresh_spawn_role', '🆕 Fresh Spawn'],
+    ['patched_in_role', '⭐ Patched In'],
+    ['glitch_veteran_role', '🏆 Glitch Veteran'],
+    ['method_finder_role', '💎 Method Finder'],
+    ['the_one_role', '🏆 The #1'],
+    // Game roles
     ['gta_role', '💰 Los Santos Hustler'],
     ['rdo_role', '🐴 Frontier Outlaw'],
     ['cayo_role', '🏝️ Cayo Grinder'],
     ['wagon_role', '🛞 Wagon Runner'],
     ['bounty_role', '💀 Bounty Hunter'],
+    // Platform roles
     ['ps5_role', '🎮 PlayStation 5'],
-    ['ps4_role', '🎮 PlayStation 4']
+    ['ps4_role', '🎮 PlayStation 4'],
+    ['primary_ps5_role', '⭐ Primary: PS5'],
+    ['primary_ps4_role', '⭐ Primary: PS4']
   ];
   
   for (const [key, roleName] of roleConfigs) {

@@ -72,6 +72,7 @@ async function assignFreshSpawn(member) {
 
 /**
  * Check and update ranks for all members in all guilds
+ * FIXED: Only promotes if they actually have Fresh Spawn first (prevents new server issues)
  */
 async function checkAllMemberRanks(client) {
   for (const [, guild] of client.guilds.cache) {
@@ -84,6 +85,7 @@ async function checkAllMemberRanks(client) {
         patchedIn: guild.roles.cache.find(r => r.name === RANKS.PATCHED_IN.name),
         glitchVeteran: guild.roles.cache.find(r => r.name === RANKS.GLITCH_VETERAN.name),
         methodFinder: guild.roles.cache.find(r => r.name === RANKS.METHOD_FINDER.name),
+        verified: guild.roles.cache.find(r => r.name === '✅ Verified'),
         vip: guild.roles.cache.find(r => r.name === VIP_ROLE)
       };
       
@@ -93,9 +95,29 @@ async function checkAllMemberRanks(client) {
       for (const [, member] of guild.members.cache) {
         if (member.user.bot) continue;
         
+        // Skip unverified members - they shouldn't get progression roles
+        if (roles.verified && !member.roles.cache.has(roles.verified.id)) continue;
+        
         const daysInServer = getDaysInServer(member);
         
-        // Remove Fresh Spawn after 7 days
+        // IMPORTANT: Only process members who HAVE a time role already
+        // This prevents auto-promoting everyone on a new server setup
+        const hasTimeRole = (roles.freshSpawn && member.roles.cache.has(roles.freshSpawn.id)) ||
+                           (roles.patchedIn && member.roles.cache.has(roles.patchedIn.id)) ||
+                           (roles.glitchVeteran && member.roles.cache.has(roles.glitchVeteran.id)) ||
+                           (roles.methodFinder && member.roles.cache.has(roles.methodFinder.id));
+        
+        // If they don't have any time role but are verified, give them Fresh Spawn to start
+        if (!hasTimeRole && roles.freshSpawn && roles.verified && member.roles.cache.has(roles.verified.id)) {
+          await member.roles.add(roles.freshSpawn);
+          console.log(`[PROGRESSION] Gave Fresh Spawn to ${member.user.tag} (starting progression)`);
+          continue; // Don't promote on the same check
+        }
+        
+        // Only proceed with promotions if they have a time role
+        if (!hasTimeRole) continue;
+        
+        // Remove Fresh Spawn after 7 days and give Patched In
         if (roles.freshSpawn && member.roles.cache.has(roles.freshSpawn.id) && daysInServer >= 7) {
           await member.roles.remove(roles.freshSpawn);
           freshSpawnRemoved++;
@@ -108,26 +130,19 @@ async function checkAllMemberRanks(client) {
           }
         }
         
-        // Promote to Patched In at 7 days
-        if (roles.patchedIn && daysInServer >= 7 && !member.roles.cache.has(roles.patchedIn.id)) {
-          // Make sure they don't still have Fresh Spawn
-          if (roles.freshSpawn && member.roles.cache.has(roles.freshSpawn.id)) {
-            await member.roles.remove(roles.freshSpawn);
-          }
-          await member.roles.add(roles.patchedIn);
-          promoted++;
-          await sendPromotionDM(member, RANKS.PATCHED_IN.name, 'You can now post in #clips!');
-        }
-        
-        // Promote to Glitch Veteran at 30 days
-        if (roles.glitchVeteran && daysInServer >= 30 && !member.roles.cache.has(roles.glitchVeteran.id)) {
+        // Promote to Glitch Veteran at 30 days (must already have Patched In)
+        if (roles.glitchVeteran && daysInServer >= 30 && 
+            roles.patchedIn && member.roles.cache.has(roles.patchedIn.id) &&
+            !member.roles.cache.has(roles.glitchVeteran.id)) {
           await member.roles.add(roles.glitchVeteran);
           promoted++;
           await sendPromotionDM(member, RANKS.GLITCH_VETERAN.name, 'You\'re now a trusted member of the community!');
         }
         
-        // Promote to Method Finder at 90 days
-        if (roles.methodFinder && daysInServer >= 90 && !member.roles.cache.has(roles.methodFinder.id)) {
+        // Promote to Method Finder at 90 days (must already have Glitch Veteran)
+        if (roles.methodFinder && daysInServer >= 90 && 
+            roles.glitchVeteran && member.roles.cache.has(roles.glitchVeteran.id) &&
+            !member.roles.cache.has(roles.methodFinder.id)) {
           await member.roles.add(roles.methodFinder);
           promoted++;
           await sendPromotionDM(member, RANKS.METHOD_FINDER.name, 'You\'re now a senior member! Thanks for being part of the community.');

@@ -29,11 +29,11 @@ const LesterMasterBrain = require('./handlers/masterBrain');
 
 // ACTIVITY SYSTEMS
 let activityXP = null;
-try { activityXP = require('./handlers/activityXP'); } catch (e) { console.log('[LESTER] ActivityXP not found, skipping...'); }
+try { activityXP = require('./shared/activityXP'); } catch (e) { console.log('[LESTER] ActivityXP not found, skipping...'); }
 let activityRanking = null;
-try { activityRanking = require('./handlers/activityRanking'); } catch (e) { console.log('[LESTER] ActivityRanking not found, skipping...'); }
+try { activityRanking = require('./shared/activityRanking'); } catch (e) { console.log('[LESTER] ActivityRanking not found, skipping...'); }
 let progressionSystem = null;
-try { progressionSystem = require('./handlers/progressionSystem'); } catch (e) { console.log('[LESTER] ProgressionSystem not found, skipping...'); }
+try { progressionSystem = require('./shared/progressionSystem'); } catch (e) { console.log('[LESTER] ProgressionSystem not found, skipping...'); }
 
 // OPTIONAL SYSTEMS
 let NexusCore = null; try { NexusCore = require('./nexus/core'); } catch (e) {}
@@ -147,6 +147,34 @@ client.once(Events.ClientReady, async () => {
   
   if (intelligence) await intelligence.broadcastToOtherBots('bot_online', { botId: MY_BOT_ID, timestamp: new Date().toISOString() });
   setInterval(() => { if (intelligence) intelligence.runMaintenance().catch(console.error); }, 6 * 60 * 60 * 1000);
+  
+  // AUTO-UPDATE SERVER STATS every 5 minutes
+  setInterval(async () => {
+    try {
+      for (const guild of client.guilds.cache.values()) {
+        const statsCategory = guild.channels.cache.find(c => c.name === '📊 SERVER STATS' && c.type === 4);
+        if (!statsCategory) continue;
+        
+        const memberCount = guild.memberCount;
+        const onlineCount = guild.members.cache.filter(m => m.presence?.status && m.presence.status !== 'offline').size;
+        const botCount = guild.members.cache.filter(m => m.user.bot).size;
+        
+        for (const channel of statsCategory.children.cache.values()) {
+          if (channel.type !== 2) continue; // Voice channels only
+          try {
+            if (channel.name.startsWith('👥')) {
+              await channel.setName(`👥 Members: ${memberCount}`);
+            } else if (channel.name.startsWith('🟢')) {
+              await channel.setName(`🟢 Online: ${onlineCount}`);
+            } else if (channel.name.startsWith('🤖')) {
+              await channel.setName(`🤖 Bots: ${botCount}`);
+            }
+          } catch (e) {}
+        }
+      }
+    } catch (e) { console.error('Stats update error:', e.message); }
+  }, 5 * 60 * 1000); // Every 5 minutes
+  
   console.log('═══════════════════════════════════════════════════════════════\nLESTER ULTIMATE - THE MASTERMIND IS ONLINE\n═══════════════════════════════════════════════════════════════');
 });
 
@@ -199,8 +227,13 @@ client.on(Events.MessageCreate, async (message) => {
   if (message.author.id === client.user.id) return;
   if (!message.guild) { await generateResponse(message); return; }
 
-  // Don't respond in counting channel
-  if (message.channel.name === 'counting') return;
+  const channelName = message.channel.name;
+
+  // Handle counting channel - process the count!
+  if (channelName === 'counting') {
+    await countingHandler.handle(message, client);
+    return;
+  }
 
   // Commands
   if (message.content.startsWith(PREFIX)) {
@@ -410,7 +443,11 @@ client.on(Events.MessageUpdate, async (o, n) => { try { await loggingHandler.mes
 client.on(Events.GuildMemberAdd, async (m) => { try { await loggingHandler.memberJoined(m, client); } catch (e) {} });
 client.on(Events.GuildMemberRemove, async (m) => { try { await loggingHandler.memberLeft(m, client); } catch (e) {} });
 client.on(Events.GuildBanAdd, async (b) => { try { await loggingHandler.memberBanned(b, client); } catch (e) {} });
-client.on(Events.VoiceStateUpdate, async (o, n) => { if (intelligence?.contextAwareness && n.guild) intelligence.contextAwareness.updateVoiceState(n.guild.id, n); });
+client.on(Events.GuildMemberUpdate, async (o, n) => { try { await loggingHandler.memberUpdated(o, n, client); } catch (e) {} });
+client.on(Events.VoiceStateUpdate, async (o, n) => { 
+  if (intelligence?.contextAwareness && n.guild) intelligence.contextAwareness.updateVoiceState(n.guild.id, n);
+  try { await loggingHandler.voiceStateUpdate(o, n, client); } catch (e) {}
+});
 client.on(Events.MessageReactionAdd, async (r, u) => { if (u.bot) return; if (intelligence && r.message.author?.id === client.user.id) await intelligence.handleReaction(r.message.id, r.emoji.name, u.id); });
 
 client.on('error', console.error);
