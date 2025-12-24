@@ -112,7 +112,7 @@ async function handleVerification(interaction, client) {
     if (accountAge < sevenDays) {
       // Log suspicious new account but still verify
       try {
-        const logChannel = guild.channels.cache.find(c => c.name === 'join-leave');
+        const logChannel = guild.channels.cache.find(c => c.name === 'verified-log');
         if (logChannel) {
           const warnEmbed = new EmbedBuilder()
             .setTitle('⚠️ New Account Verified')
@@ -148,7 +148,7 @@ async function handleVerification(interaction, client) {
     
     // Log verification
     try {
-      const logChannel = guild.channels.cache.find(c => c.name === 'join-leave');
+      const logChannel = guild.channels.cache.find(c => c.name === 'verified-log');
       if (logChannel) {
         const logEmbed = new EmbedBuilder()
           .setTitle('✅ Member Verified')

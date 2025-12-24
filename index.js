@@ -7,7 +7,7 @@
  * ╚══════╝╚══════╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝     ╚═════╝ ╚══════╝╚═╝   ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
  * 
  * THE MASTERMIND - COMPLETE ULTIMATE EDITION
- * ALL FEATURES + V6 INTELLIGENCE + ORIGINAL HANDLERS
+ * ALL FEATURES + V6 INTELLIGENCE + ACTIVITY SYSTEMS
  */
 
 require('dotenv').config();
@@ -27,6 +27,14 @@ const { setupReactionRoles } = require('./handlers/reactionRoles');
 const investigation = require('./handlers/investigation');
 const LesterMasterBrain = require('./handlers/masterBrain');
 
+// ACTIVITY SYSTEMS
+let activityXP = null;
+try { activityXP = require('./handlers/activityXP'); } catch (e) { console.log('[LESTER] ActivityXP not found, skipping...'); }
+let activityRanking = null;
+try { activityRanking = require('./handlers/activityRanking'); } catch (e) { console.log('[LESTER] ActivityRanking not found, skipping...'); }
+let progressionSystem = null;
+try { progressionSystem = require('./handlers/progressionSystem'); } catch (e) { console.log('[LESTER] ProgressionSystem not found, skipping...'); }
+
 // OPTIONAL SYSTEMS
 let NexusCore = null; try { NexusCore = require('./nexus/core'); } catch (e) {}
 let FreeRoamSystem = null; try { FreeRoamSystem = require('./freeroam'); } catch (e) {}
@@ -36,9 +44,12 @@ let VoiceSystem = null, VoiceChatHandler = null;
 try { const v = require('./shared/voiceSystem'); VoiceSystem = v.VoiceSystem; VoiceChatHandler = v.VoiceChatHandler; } catch (e) {}
 
 // V6 INTELLIGENCE
-const { UltimateBotIntelligence } = require('./shared/ultimateIntelligence');
-const autonomousChat = require('./shared/autonomousChat');
-const mediaGenerator = require('./shared/mediaGenerator');
+let UltimateBotIntelligence = null;
+try { UltimateBotIntelligence = require('./shared/ultimateIntelligence').UltimateBotIntelligence; } catch (e) {}
+let autonomousChat = null;
+try { autonomousChat = require('./shared/autonomousChat'); } catch (e) {}
+let mediaGenerator = null;
+try { mediaGenerator = require('./shared/mediaGenerator'); } catch (e) {}
 
 const MY_BOT_ID = 'lester';
 const BOT_NAME = 'Lester';
@@ -68,19 +79,72 @@ const activeConversations = new Map();
 client.once(Events.ClientReady, async () => {
   console.log(`\n[LESTER ULTIMATE] Logged in as ${client.user.tag} | ${client.guilds.cache.size} servers\n`);
 
-  try { intelligence = new UltimateBotIntelligence(pool, client, MY_BOT_ID); await intelligence.initialize(); console.log('🧠 V6 Intelligence: ONLINE'); } catch (e) { console.error('V6:', e.message); }
-  try { masterBrain = new LesterMasterBrain(pool, anthropic, client); await masterBrain.initialize(); console.log('🎯 Master Brain: ONLINE'); } catch (e) { console.error('MasterBrain:', e.message); }
+  // V6 Intelligence
+  if (UltimateBotIntelligence) {
+    try { 
+      intelligence = new UltimateBotIntelligence(pool, client, MY_BOT_ID); 
+      await intelligence.initialize(); 
+      console.log('🧠 V6 Intelligence: ONLINE'); 
+    } catch (e) { console.error('V6:', e.message); }
+  }
+  
+  // Master Brain
+  try { 
+    masterBrain = new LesterMasterBrain(pool, anthropic, client); 
+    await masterBrain.initialize(); 
+    console.log('🎯 Master Brain: ONLINE'); 
+  } catch (e) { console.error('MasterBrain:', e.message); }
+  
+  // Optional systems
   if (NexusCore) try { nexusCore = new NexusCore(pool, anthropic, client); await nexusCore.initialize(); console.log('⚡ Nexus Core: ONLINE'); } catch (e) {}
   if (TheBrain) try { sentientBrain = new TheBrain(MY_BOT_ID, pool); console.log('🧬 Sentient Brain: ONLINE'); } catch (e) {}
   if (ApexBrain) try { apexBrain = new ApexBrain(MY_BOT_ID, pool); console.log('💡 Apex Brain: ONLINE'); } catch (e) {}
   if (FreeRoamSystem) try { freeRoam = new FreeRoamSystem(MY_BOT_ID, client.user.id, LESTER_SYSTEM, pool); console.log('🚀 FreeRoam: ONLINE'); } catch (e) {}
   if (VoiceSystem && process.env.ELEVENLABS_API_KEY) try { voiceSystem = new VoiceSystem(MY_BOT_ID, process.env.ELEVENLABS_API_KEY); voiceChatHandler = new VoiceChatHandler(client, voiceSystem, LESTER_SYSTEM, anthropic); voiceChatHandler.setupListeners(); console.log('🎙️ Voice: ONLINE'); } catch (e) {}
+  
+  // Gun Van
   try { gunVanHandler.startSchedule(client); console.log('🔫 Gun Van: ONLINE'); } catch (e) {}
+  
+  // Reaction Roles
   try { setupReactionRoles(client); console.log('🎭 Reaction Roles: ONLINE'); } catch (e) {}
+  
+  // ACTIVITY SYSTEMS
+  if (activityXP) {
+    try {
+      activityXP.initialize(client);
+      await activityXP.createActivityTables(client);
+      console.log('📊 Activity XP: ONLINE');
+    } catch (e) { console.error('ActivityXP:', e.message); }
+  }
+  
+  if (activityRanking) {
+    try {
+      await activityRanking.createActivityTables(client);
+      console.log('🏆 Activity Ranking: ONLINE');
+    } catch (e) { console.error('ActivityRanking:', e.message); }
+  }
+  
+  if (progressionSystem) {
+    try {
+      progressionSystem.initialize(client);
+      console.log('⏰ Progression System: ONLINE');
+    } catch (e) { console.error('ProgressionSystem:', e.message); }
+  }
 
   client.user.setPresence({ activities: [{ name: 'Watching everything | ?help', type: 3 }], status: 'online' });
   
-  if (ALLOWED_CHANNEL_IDS.length > 0) setTimeout(() => { try { autonomousChat.startAutonomous(ALLOWED_CHANNEL_IDS.map(id => client.channels.cache.get(id)).filter(Boolean), { botId: MY_BOT_ID, botName: BOT_NAME, client, anthropic, pool, intelligence, personality: LESTER_SYSTEM, otherBotIds: OTHER_BOT_IDS }); } catch (e) {} }, 20000);
+  // Autonomous chat
+  if (autonomousChat && ALLOWED_CHANNEL_IDS.length > 0) {
+    setTimeout(() => { 
+      try { 
+        autonomousChat.startAutonomous(
+          ALLOWED_CHANNEL_IDS.map(id => client.channels.cache.get(id)).filter(Boolean), 
+          { botId: MY_BOT_ID, botName: BOT_NAME, client, anthropic, pool, intelligence, personality: LESTER_SYSTEM, otherBotIds: OTHER_BOT_IDS }
+        ); 
+      } catch (e) {} 
+    }, 20000);
+  }
+  
   if (intelligence) await intelligence.broadcastToOtherBots('bot_online', { botId: MY_BOT_ID, timestamp: new Date().toISOString() });
   setInterval(() => { if (intelligence) intelligence.runMaintenance().catch(console.error); }, 6 * 60 * 60 * 1000);
   console.log('═══════════════════════════════════════════════════════════════\nLESTER ULTIMATE - THE MASTERMIND IS ONLINE\n═══════════════════════════════════════════════════════════════');
@@ -91,6 +155,9 @@ function isInActiveConversation(channelId, userId) { const c = activeConversatio
 function trackConversation(channelId, userId) { activeConversations.set(channelId, { userId, lastTime: Date.now() }); }
 
 async function checkShouldRespond(message) {
+  // NEVER respond in counting channel
+  if (message.channel.name === 'counting') return false;
+  
   if (message.channel.name === 'talk-to-lester') return true;
   if (isInActiveConversation(message.channel.id, message.author.id)) return true;
   if (message.mentions.has(client.user)) return true;
@@ -110,17 +177,21 @@ async function generateResponse(message) {
     await message.channel.sendTyping();
     let intelligencePrompt = '', ctx = null;
     if (intelligence) { ctx = await intelligence.processIncoming(message); intelligencePrompt = intelligence.buildPromptContext(ctx); }
+    
     const response = await anthropic.messages.create({ model: 'claude-sonnet-4-20250514', max_tokens: 500, system: LESTER_SYSTEM + (intelligencePrompt ? '\n\n' + intelligencePrompt : ''), messages: history });
     let reply = response.content[0].text;
+    
     if (intelligence && ctx) { reply = await intelligence.processOutgoing(message, reply, ctx); await intelligence.storeConversationMemory(message, reply); }
     history.push({ role: 'assistant', content: reply });
     conversationMemory.set(message.author.id, history);
+    
     await new Promise(r => setTimeout(r, Math.min(reply.length * 30, 3000)));
     const sent = await message.reply(reply);
     trackConversation(message.channel.id, message.author.id);
+    
     if (intelligence?.learning) await intelligence.learning.recordResponse(sent.id, message.channel.id, message.author.id, 'reply', 'general', reply.length);
-    try { await mediaGenerator.handleBotMedia(MY_BOT_ID, reply, message.channel); } catch (e) {}
-  } catch (e) { console.error('Response error:', e); await message.reply("*keyboard smashing* Great. System's acting up."); }
+    if (mediaGenerator) try { await mediaGenerator.handleBotMedia(MY_BOT_ID, reply, message.channel); } catch (e) {}
+  } catch (e) { console.error('Response error:', e); await message.reply("*keyboard smashing* Something broke."); }
 }
 
 client.on(Events.MessageCreate, async (message) => {
@@ -128,15 +199,21 @@ client.on(Events.MessageCreate, async (message) => {
   if (message.author.id === client.user.id) return;
   if (!message.guild) { await generateResponse(message); return; }
 
-  if (await countingHandler.isCountingChannel(message, client)) { await countingHandler.handle(message, client); return; }
-  try { const scam = await scamDetection.check(message, client); if (scam.isScam) { await scamDetection.handle(message, scam, client); return; } } catch (e) {}
+  // Don't respond in counting channel
+  if (message.channel.name === 'counting') return;
 
+  // Commands
   if (message.content.startsWith(PREFIX)) {
     const args = message.content.slice(PREFIX.length).trim().split(/ +/);
     const cmd = args.shift().toLowerCase();
+    
     const commands = {
+      // SETUP COMMANDS - Fixed to use setupHandler
       'setup': () => setupHandler.execute(message, args, client),
-      'reset': () => setupHandler.executeReset?.(message, client) || message.reply('Reset not available'),
+      'nuke': () => setupHandler.nuke(message, args, client),
+      'reset': () => setupHandler.reset(message, args, client),
+      
+      // MODERATION
       'kick': () => moderationHandler.kick(message, args, client),
       'ban': () => moderationHandler.ban(message, args, client),
       'unban': () => moderationHandler.unban(message, args, client),
@@ -151,16 +228,21 @@ client.on(Events.MessageCreate, async (message) => {
       'slowmode': () => moderationHandler.slowmode(message, args, client),
       'lock': () => moderationHandler.lock(message, args, client),
       'unlock': () => moderationHandler.unlock(message, args, client),
-      'nuke': () => moderationHandler.nuke(message, args, client),
+      
+      // INVESTIGATION
       'investigate': () => masterBrain?.handleInvestigateCommand(message, args) || message.reply('System not ready.'),
       'evidence': () => masterBrain?.handleEvidenceCommand(message, args) || message.reply('System not ready.'),
       'record': () => masterBrain?.handleRecordCommand(message, args) || message.reply('System not ready.'),
       'watchlist': () => masterBrain?.handleWatchlistCommand(message) || message.reply('System not ready.'),
       'predict': () => masterBrain?.handlePredictCommand(message, args) || message.reply('System not ready.'),
+      
+      // SCAM DETECTION
       'addscam': () => scamDetection.addScam(message, args, client),
       'removescam': () => scamDetection.removeScam(message, args, client),
       'scamlist': () => scamDetection.listScams(message, client),
       'checklink': () => scamDetection.checkLink(message, args, client),
+      
+      // INFO & UTILITY
       'help': () => sendHelp(message),
       'ping': () => message.reply(`*types without looking* ${client.ws.ping}ms.`),
       'serverinfo': () => sendServerInfo(message),
@@ -171,27 +253,44 @@ client.on(Events.MessageCreate, async (message) => {
       'countrecord': () => countingHandler.getRecord(message, client),
       'memory': () => memoryHandler.showMemory(message, args, client),
       'forgetme': () => memoryHandler.forgetUser(message, client),
+      
+      // VOICE
       'voice': () => handleVoice(message, args),
       'speak': () => handleSpeak(message, args),
-      'shutup': () => { if (voiceSystem) voiceSystem.leaveChannel(); message.reply('Fine.'); }
+      'shutup': () => { if (voiceSystem) voiceSystem.leaveChannel(); message.reply('Fine.'); },
+      
+      // STATS (if activityXP is loaded)
+      'stats': () => handleStats(message, args),
+      'leaderboard': () => handleLeaderboard(message, args),
+      'lb': () => handleLeaderboard(message, args)
     };
-    if (commands[cmd]) { try { await commands[cmd](); } catch (e) { console.error(`Cmd ${cmd}:`, e); message.reply("Something broke."); } return; }
+    
+    if (commands[cmd]) { 
+      try { await commands[cmd](); } catch (e) { console.error(`Cmd ${cmd}:`, e); message.reply("Something broke."); } 
+      return; 
+    }
   }
+  
   if (await checkShouldRespond(message)) await generateResponse(message);
 });
 
 async function sendHelp(message) {
-  const embed = new EmbedBuilder().setTitle('🧠 Lester - The Mastermind').setDescription("*adjusts glasses* Fine...").addFields(
-    { name: '⚙️ Admin', value: '`?setup` `?reset`' },
-    { name: '🔨 Moderation', value: '`?kick` `?ban` `?unban` `?mute` `?unmute` `?timeout`\n`?warn` `?warnings` `?clearwarnings` `?purge` `?slowmode`\n`?lock` `?unlock` `?nuke`' },
-    { name: '🔍 Investigation', value: '`?investigate` `?evidence` `?record` `?watchlist` `?predict`' },
-    { name: '🛡️ Scam', value: '`?addscam` `?removescam` `?scamlist` `?checklink`' },
-    { name: '📊 Info', value: '`?serverinfo` `?userinfo` `?avatar`' },
-    { name: '🔫 Gun Van', value: '`?gunvan`' },
-    { name: '🔢 Counting', value: '`?countrecord`' },
-    { name: '🧠 Memory', value: '`?memory` `?forgetme`' },
-    { name: '🎙️ Voice', value: '`?voice join/leave` `?speak` `?shutup`' }
-  ).setColor(0x00FF00).setFooter({ text: 'ULTIMATE Edition' });
+  const embed = new EmbedBuilder()
+    .setTitle('🧠 Lester - The Mastermind')
+    .setDescription("*adjusts glasses* Fine, here's what I can do...")
+    .addFields(
+      { name: '⚙️ Admin', value: '`?setup` `?reset` `?nuke`' },
+      { name: '🔨 Moderation', value: '`?kick` `?ban` `?unban` `?mute` `?unmute` `?timeout`\n`?warn` `?warnings` `?clearwarnings` `?purge` `?slowmode`\n`?lock` `?unlock`' },
+      { name: '🔍 Investigation', value: '`?investigate` `?evidence` `?record` `?watchlist` `?predict`' },
+      { name: '🛡️ Scam', value: '`?addscam` `?removescam` `?scamlist` `?checklink`' },
+      { name: '📊 Info', value: '`?serverinfo` `?userinfo` `?avatar` `?stats` `?leaderboard`' },
+      { name: '🔫 Gun Van', value: '`?gunvan`' },
+      { name: '🔢 Counting', value: '`?countrecord`' },
+      { name: '🧠 Memory', value: '`?memory` `?forgetme`' },
+      { name: '🎙️ Voice', value: '`?voice join/leave` `?speak` `?shutup`' }
+    )
+    .setColor(0x00FF00)
+    .setFooter({ text: 'ULTIMATE Edition + Activity Systems' });
   await message.reply({ embeds: [embed] });
 }
 
@@ -238,6 +337,73 @@ async function handleSpeak(message, args) {
   try { const r = await anthropic.messages.create({ model: 'claude-sonnet-4-20250514', max_tokens: 100, system: LESTER_SYSTEM + '\nKeep SHORT.', messages: [{ role: 'user', content: text }] }); await voiceSystem.speak(r.content[0].text); message.reply(`🎙️ "${r.content[0].text}"`); } catch (e) { message.reply("Voice error."); }
 }
 
+async function handleStats(message, args) {
+  if (!activityXP) return message.reply("Activity tracking not enabled.");
+  
+  const target = message.mentions.members.first() || message.member;
+  
+  try {
+    const stats = await activityXP.getUserStats(target.id, message.guild.id, client);
+    
+    const embed = new EmbedBuilder()
+      .setTitle(`📊 ${target.user.username}'s Stats`)
+      .addFields(
+        { name: '⭐ XP', value: stats.xp.toLocaleString(), inline: true },
+        { name: '💬 Messages', value: stats.messages.toLocaleString(), inline: true },
+        { name: '🎤 Voice Hours', value: `${stats.voiceHours}h`, inline: true },
+        { name: '👍 Reactions', value: stats.reactions.toLocaleString(), inline: true },
+        { name: '🔥 Streak', value: `${stats.streak} days`, inline: true }
+      )
+      .setColor(0x00FF00)
+      .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
+      .setTimestamp();
+    
+    await message.reply({ embeds: [embed] });
+  } catch (e) {
+    await message.reply("*squints at screen* Can't find their stats.");
+  }
+}
+
+async function handleLeaderboard(message, args) {
+  if (!activityXP) return message.reply("Activity tracking not enabled.");
+  
+  const type = args[0] || 'xp';
+  const validTypes = ['xp', 'messages', 'voice', 'reactions'];
+  
+  if (!validTypes.includes(type)) {
+    return message.reply(`Valid types: ${validTypes.join(', ')}`);
+  }
+  
+  try {
+    const leaderboard = await activityXP.getLeaderboard(message.guild.id, type, 10, client);
+    
+    if (leaderboard.length === 0) {
+      return message.reply("No data yet. Get chatting!");
+    }
+    
+    let description = '';
+    for (let i = 0; i < leaderboard.length; i++) {
+      const entry = leaderboard[i];
+      const member = await message.guild.members.fetch(entry.user_id).catch(() => null);
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+      const value = type === 'voice' ? `${Math.floor(entry.value / 60)}h` : parseInt(entry.value).toLocaleString();
+      description += `${medal} **${member?.user.username || 'Unknown'}** - ${value}\n`;
+    }
+    
+    const embed = new EmbedBuilder()
+      .setTitle(`📊 ${type.toUpperCase()} Leaderboard`)
+      .setDescription(description)
+      .setColor(0xFFD700)
+      .setFooter({ text: 'Use ?lb [xp|messages|voice|reactions]' })
+      .setTimestamp();
+    
+    await message.reply({ embeds: [embed] });
+  } catch (e) {
+    console.error('Leaderboard error:', e);
+    await message.reply("*keyboard smashing* Leaderboard broke.");
+  }
+}
+
 // LOGGING EVENTS
 client.on(Events.MessageDelete, async (m) => { try { await loggingHandler.messageDeleted(m, client); } catch (e) {} });
 client.on(Events.MessageUpdate, async (o, n) => { try { await loggingHandler.messageEdited(o, n, client); } catch (e) {} });
@@ -250,5 +416,3 @@ client.on(Events.MessageReactionAdd, async (r, u) => { if (u.bot) return; if (in
 client.on('error', console.error);
 process.on('unhandledRejection', console.error);
 client.login(process.env.DISCORD_TOKEN);
-
-// Deploy fix 2025-12-23 13:05:31

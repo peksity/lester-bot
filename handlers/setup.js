@@ -1,15 +1,22 @@
 /**
  * SETUP HANDLER - THE UNPATCHED METHOD
  * Creates the ENTIRE server structure automatically
- * Role-gated channels, permissions, verification - EVERYTHING
  * 
- * Features:
+ * 🎮 271 FEATURES INCLUDING:
+ * - Advanced LFG Systems (Cayo, Wagon, Bounty) with dropdowns
+ * - Activity XP System with 17 progression roles
+ * - Time-based progression (Fresh Spawn → Method Finder)
+ * - Role-gated channel visibility
+ * - PS4/PS5 conflict detection
+ * - Verification with channel hiding
+ * - VIP/Booster perks
+ * - 14 logging channels
+ * - Counting game with bot protection
+ * 
+ * Commands:
  * - ?setup - Creates entire server structure
  * - ?nuke - Deletes EVERYTHING (owner only)
  * - ?reset - Deletes only bot-created content
- * - Role-gated channel visibility
- * - PS4/PS5 conflict detection
- * - All 120+ features documented
  */
 
 const { 
@@ -209,6 +216,7 @@ const SERVER_STRUCTURE = {
         { name: 'message-logs', type: 'text', permissions: 'staff-only' },
         { name: 'bot-actions', type: 'text', permissions: 'staff-only' },
         { name: 'join-leave', type: 'text', permissions: 'staff-only' },
+        { name: 'verified-log', type: 'text', permissions: 'staff-only' },
         { name: 'voice-logs', type: 'text', permissions: 'staff-only' },
         { name: 'role-changes', type: 'text', permissions: 'staff-only' },
         { name: 'nickname-logs', type: 'text', permissions: 'staff-only' },
@@ -396,11 +404,17 @@ Lester runs NEXUS moderation - he watches everything and handles problems automa
         { name: '💬 Chat', value: '#talk-to-pavel - Talk to Pavel', inline: true },
         { name: '📍 LFG Channel', value: '#cayo-lfg', inline: true },
         { name: '🗣️ Natural Language', value: 'Just say *"anyone wanna do cayo?"* or *"need 2 for heist"* - Pavel understands!', inline: false },
-        { name: '⚡ LFG Commands', value: '`?cayo` - Cayo Perico heist\n`?casino` - Casino heist\n`?heist` - Any heist\n`?bogdan` - Act 2 Bogdan\n`?doomsday` - Doomsday heist', inline: false },
+        { name: '🏝️ Advanced Cayo LFG', value: 
+          '`?cayo` - Opens interactive session creator:\n' +
+          '• Select primary target (💎 Pink Diamond, 📜 Bearer Bonds, etc.)\n' +
+          '• Choose approach (Drainage, Main Dock, Airstrip, etc.)\n' +
+          '• Toggle B2B mode on/off\n' +
+          '• Auto voice channel creation\n' +
+          '• Live payout tracking & run counter', inline: false },
         { name: '📊 Reputation', value: '`?rep [@user]` - Check player reputation', inline: true },
-        { name: '✅ Session', value: '`?done` - Complete (+rep)\n`?cancel` - Cancel session', inline: true }
+        { name: '🎤 Voice', value: '`?voice join/leave`', inline: true }
       ],
-      footer: { text: 'Reputation system tracks reliable players • Voice channels auto-created' },
+      footer: { text: 'Dropdown menus • Platform matching • Earnings tracker' },
       color: 0xFFD700
     },
     
@@ -413,11 +427,17 @@ Lester runs NEXUS moderation - he watches everything and handles problems automa
         { name: '💬 Chat', value: '#talk-to-cripps - Talk to Cripps', inline: true },
         { name: '📍 LFG Channel', value: '#wagon-lfg', inline: true },
         { name: '🗣️ Natural Language', value: 'Just say *"need help with wagon"* or *"running deliveries"* - Cripps understands!', inline: false },
-        { name: '⚡ LFG Commands', value: '`?wagon` - Wagon delivery\n`?delivery` - Same as wagon\n`?trader` - Trader activities\n`?moonshine` - Moonshine delivery\n`?posse` - General posse', inline: false },
+        { name: '🛒 Advanced Wagon LFG', value: 
+          '`?wagon` - Opens interactive session creator:\n' +
+          '• Select delivery type (📍 Local / 🗺️ Distant)\n' +
+          '• Select wagon size (Small/Medium/Large)\n' +
+          '• Toggle dupe method (11 dupes per session)\n' +
+          '• Auto voice channel creation\n' +
+          '• Dupe counter & earnings tracker', inline: false },
         { name: '📊 Reputation', value: '`?rep [@user]` - Check reputation', inline: true },
-        { name: '✅ Session', value: '`?done` - Complete\n`?cancel` - Cancel', inline: true }
+        { name: '🎤 Voice', value: '`?voice join/leave`', inline: true }
       ],
-      footer: { text: 'Reputation system tracks reliable players • Voice channels auto-created' },
+      footer: { text: 'Dropdown menus • Platform matching • Earnings tracker' },
       color: 0x8B4513
     },
     
@@ -446,11 +466,18 @@ Lester runs NEXUS moderation - he watches everything and handles problems automa
         { name: '💬 Chat', value: '#talk-to-police-chief - Talk to the Chief', inline: true },
         { name: '📍 LFG Channel', value: '#bounty-lfg', inline: true },
         { name: '🗣️ Natural Language', value: 'Just say *"anyone down for etta doyle?"* or *"need bounty crew"* - the Chief understands!', inline: false },
-        { name: '⚡ LFG Commands', value: '`?bounty` - Bounty hunting\n`?legendary [name]` - Legendary bounty\n`?etta` `?owlhoot` `?cecil` - Specific legendaries\n`?posse` - General posse', inline: false },
+        { name: '🎯 Advanced Bounty LFG', value: 
+          '`?bounty` - Opens interactive session creator:\n' +
+          '• Select bounty type (⭐ Regular / 🌟 Legendary / 💀 Infamous)\n' +
+          '• Choose legendary targets (Etta Doyle, Cecil Tucker, etc.)\n' +
+          '• View difficulty ratings (1-5 stars)\n' +
+          '• Toggle Timer vs Speed payout strategy\n' +
+          '• Auto voice channel creation\n' +
+          '• Cash & Gold tracking', inline: false },
         { name: '📊 Reputation', value: '`?rep [@user]` - Check reputation', inline: true },
-        { name: '✅ Session', value: '`?done` - Complete\n`?cancel` - Cancel', inline: true }
+        { name: '🎤 Voice', value: '`?voice join/leave`', inline: true }
       ],
-      footer: { text: 'Reputation system tracks reliable players • Voice channels auto-created' },
+      footer: { text: 'Dropdown menus • Platform matching • Gold tracker' },
       color: 0xC0392B
     },
     
@@ -1482,6 +1509,36 @@ async function setupRoleUnlocks(channels) {
   await roleUnlocksChannel.send({ embeds: [vipEmbed] });
   await new Promise(r => setTimeout(r, 500));
   
+  // ========== ADVANCED LFG SYSTEMS ==========
+  const lfgEmbed = new EmbedBuilder()
+    .setTitle('🎮 ADVANCED LFG SYSTEMS')
+    .setDescription('*Interactive heist/activity matchmaking with live tracking*')
+    .addFields(
+      { name: '🏝️ Cayo Perico LFG', value: 
+        '• Select primary target (Pink Diamond, Bearer Bonds, etc.)\n' +
+        '• Choose approach (Drainage, Main Dock, etc.)\n' +
+        '• Toggle B2B mode\n' +
+        '• Auto voice channel creation\n' +
+        '• Live payout tracking', inline: false },
+      { name: '🛒 Wagon Delivery LFG', value: 
+        '• Local or Distant delivery selection\n' +
+        '• Dupe method toggle (11x dupes)\n' +
+        '• Wagon size selection\n' +
+        '• Auto voice channel creation\n' +
+        '• Earnings tracker', inline: false },
+      { name: '🎯 Bounty Hunter LFG', value: 
+        '• Regular, Legendary, or Infamous bounties\n' +
+        '• 10 Legendary targets with difficulty ratings\n' +
+        '• Timer vs Speed payout strategy\n' +
+        '• Cash & Gold tracking\n' +
+        '• Auto voice channel creation', inline: false }
+    )
+    .setColor(0x5865F2)
+    .setFooter({ text: 'Commands: ?cayo | ?wagon | ?bounty • All with dropdown menus!' });
+  
+  await roleUnlocksChannel.send({ embeds: [lfgEmbed] });
+  await new Promise(r => setTimeout(r, 500));
+  
   // ========== XP MULTIPLIERS ==========
   const multipliersEmbed = new EmbedBuilder()
     .setTitle('✨ XP MULTIPLIERS')
@@ -1652,6 +1709,7 @@ async function saveConfig(guild, channels, roles, client) {
     ['mod_log_channel', 'mod-actions'],
     ['message_log_channel', 'message-logs'],
     ['join_leave_channel', 'join-leave'],
+    ['verified_log_channel', 'verified-log'],
     ['voice_log_channel', 'voice-logs'],
     ['role_log_channel', 'role-changes'],
     ['nexus_log_channel', 'nexus-log'],
