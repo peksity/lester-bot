@@ -261,10 +261,14 @@ class UserMemorySystem {
     try {
       await this.pool.query(SCHEMA);
       
-      // Migration: Add missing columns to existing tables
-      const migrations = [
+      // Add missing columns if they don't exist (for older databases)
+      const alterQueries = [
         `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS username VARCHAR(64)`,
         `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS display_name VARCHAR(64)`,
+        `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS total_messages INT DEFAULT 0`,
+        `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS total_interactions INT DEFAULT 0`,
+        `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS is_regular BOOLEAN DEFAULT FALSE`,
+        `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS is_vip BOOLEAN DEFAULT FALSE`,
         `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS timezone_guess VARCHAR(32)`,
         `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS active_hours JSONB DEFAULT '[]'`,
         `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS interests JSONB DEFAULT '[]'`,
@@ -272,10 +276,10 @@ class UserMemorySystem {
         `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS personal_info JSONB DEFAULT '{}'`
       ];
       
-      for (const migration of migrations) {
+      for (const query of alterQueries) {
         try {
-          await this.pool.query(migration);
-        } catch (migrationError) {
+          await this.pool.query(query);
+        } catch (e) {
           // Column might already exist, ignore error
         }
       }
