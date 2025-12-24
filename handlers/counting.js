@@ -6,6 +6,9 @@
 
 const { EmbedBuilder } = require('discord.js');
 
+// Hardcoded role ID for The #1
+const THE_ONE_ROLE_ID = '1453304639578443940';
+
 // ============================================
 // CHECK IF COUNTING CHANNEL
 // ============================================
@@ -124,7 +127,10 @@ async function resetCount(message, client, data, reason) {
     `, [message.guild.id]);
     
     // Remove The #1 role from everyone
-    const counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    let counterRole = message.guild.roles.cache.get(THE_ONE_ROLE_ID);
+    if (!counterRole) {
+      counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    }
     if (counterRole) {
       const members = counterRole.members;
       for (const [id, member] of members) {
@@ -158,9 +164,14 @@ async function resetCount(message, client, data, reason) {
 // ============================================
 async function updateTheOneRole(message, client) {
   try {
-    const counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    // Try role ID first, then fall back to name search
+    let counterRole = message.guild.roles.cache.get(THE_ONE_ROLE_ID);
     if (!counterRole) {
-      console.log('[COUNTING] Could not find 🏆 The #1 role');
+      counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    }
+    
+    if (!counterRole) {
+      console.log('[COUNTING] Could not find 🏆 The #1 role (ID:', THE_ONE_ROLE_ID, ')');
       return;
     }
     
@@ -212,7 +223,10 @@ async function getRecord(message, client) {
     const data = result.rows[0];
     
     // Find current holder of The #1
-    const counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    let counterRole = message.guild.roles.cache.get(THE_ONE_ROLE_ID);
+    if (!counterRole) {
+      counterRole = message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    }
     let currentHolder = 'Nobody';
     if (counterRole && counterRole.members.size > 0) {
       const holder = counterRole.members.first();

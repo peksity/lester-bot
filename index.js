@@ -155,8 +155,21 @@ client.once(Events.ClientReady, async () => {
         const statsCategory = guild.channels.cache.find(c => c.name === '📊 SERVER STATS' && c.type === 4);
         if (!statsCategory) continue;
         
+        // Fetch all members WITH presence data
+        await guild.members.fetch({ withPresences: true });
+        
         const memberCount = guild.memberCount;
-        const onlineCount = guild.members.cache.filter(m => m.presence?.status && m.presence.status !== 'offline').size;
+        
+        // Count ONLY truly online members (online, idle, dnd - NOT offline or null)
+        let onlineCount = 0;
+        for (const [id, member] of guild.members.cache) {
+          if (member.user.bot) continue; // Don't count bots
+          const status = member.presence?.status;
+          if (status === 'online' || status === 'idle' || status === 'dnd') {
+            onlineCount++;
+          }
+        }
+        
         const botCount = guild.members.cache.filter(m => m.user.bot).size;
         
         for (const channel of statsCategory.children.cache.values()) {
@@ -171,6 +184,8 @@ client.once(Events.ClientReady, async () => {
             }
           } catch (e) {}
         }
+        
+        console.log(`[STATS] Updated: ${memberCount} members, ${onlineCount} online, ${botCount} bots`);
       }
     } catch (e) { console.error('Stats update error:', e.message); }
   }, 5 * 60 * 1000); // Every 5 minutes
@@ -284,6 +299,7 @@ client.on(Events.MessageCreate, async (message) => {
       'gunvan': () => gunVanHandler.getLocation(message, client),
       'gun': () => gunVanHandler.getLocation(message, client),
       'countrecord': () => countingHandler.getRecord(message, client),
+      'fixcounting': () => fixCountingChannel(message, client),
       'memory': () => memoryHandler.showMemory(message, args, client),
       'forgetme': () => memoryHandler.forgetUser(message, client),
       
@@ -434,6 +450,75 @@ async function handleLeaderboard(message, args) {
   } catch (e) {
     console.error('Leaderboard error:', e);
     await message.reply("*keyboard smashing* Leaderboard broke.");
+  }
+}
+
+// ============================================
+// FIX COUNTING CHANNEL
+// ============================================
+async function fixCountingChannel(message, client) {
+  // Only owner/admin can use this
+  if (!message.member.permissions.has('Administrator')) {
+    return message.reply("You need Admin permissions to fix the counting channel.");
+  }
+  
+  const COUNTING_CHANNEL_ID = '1453304735615418521';
+  const THE_ONE_ROLE_ID = '1453304639578443940';
+  
+  try {
+    // Get the counting channel
+    let countingChannel = await client.channels.fetch(COUNTING_CHANNEL_ID).catch(() => null);
+    
+    if (!countingChannel) {
+      countingChannel = message.guild.channels.cache.find(c => c.name === 'counting');
+    }
+    
+    if (!countingChannel) {
+      return message.reply("❌ Could not find counting channel.");
+    }
+    
+    await message.reply("🔧 Fixing counting channel...");
+    
+    // Delete all messages in the channel
+    let deleted;
+    do {
+      deleted = await countingChannel.bulkDelete(100, true).catch(() => ({ size: 0 }));
+    } while (deleted.size > 0);
+    
+    // Reset database
+    await client.db.query(`
+      DELETE FROM counting WHERE guild_id = $1
+    `, [message.guild.id]);
+    
+    await client.db.query(`
+      INSERT INTO counting (guild_id, current_count, last_counter, record)
+      VALUES ($1, 0, NULL, 0)
+    `, [message.guild.id]);
+    
+    // Remove The #1 role from everyone
+    const theOneRole = message.guild.roles.cache.get(THE_ONE_ROLE_ID) || 
+                       message.guild.roles.cache.find(r => r.name === '🏆 The #1');
+    if (theOneRole) {
+      for (const [id, member] of theOneRole.members) {
+        await member.roles.remove(theOneRole).catch(() => {});
+      }
+    }
+    
+    // Send fresh start message
+    const startEmbed = new EmbedBuilder()
+      .setTitle('🔢 COUNTING GAME')
+      .setDescription(`**How to play:**\n• Count up from 1\n• You can't count twice in a row\n• If someone messes up, it resets to 1\n\n**The Prize:**\n🏆 Whoever counts last holds **The #1** role!\n\n*Start counting from 1!*`)
+      .setColor(0x00FF00)
+      .setFooter({ text: 'Good luck!' })
+      .setTimestamp();
+    
+    await countingChannel.send({ embeds: [startEmbed] });
+    
+    await message.channel.send(`✅ Counting channel fixed! Head to <#${countingChannel.id}> and start from **1**!`);
+    
+  } catch (e) {
+    console.error('Fix counting error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
   }
 }
 
