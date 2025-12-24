@@ -773,8 +773,10 @@ CONFIDENCE: [0.0-1.0]`;
   async updateProfiles() {
     // Pick random users to update profiles for
     const users = await this.pool.query(`
-      SELECT DISTINCT user_id, guild_id FROM nexus_context
-      WHERE created_at > NOW() - INTERVAL '24 hours'
+      SELECT user_id, guild_id FROM (
+        SELECT DISTINCT user_id, guild_id FROM nexus_context
+        WHERE created_at > NOW() - INTERVAL '24 hours'
+      ) AS recent_users
       ORDER BY RANDOM() LIMIT 10
     `);
     
