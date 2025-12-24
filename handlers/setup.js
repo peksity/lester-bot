@@ -138,19 +138,20 @@ const SERVER_STRUCTURE = {
       ]
     },
     
-    // INFO - Public (unverified can see welcome, verify, rules)
+    // INFO - Mixed visibility
     {
       name: '📌 INFO',
       permissions: 'public-category',
       channels: [
+        { name: 'welcome', type: 'text', permissions: 'unverified-only' },        // Hidden after verify
+        { name: 'verify', type: 'text', permissions: 'unverified-only-react' },   // Hidden after verify
+        { name: 'rules', type: 'text', permissions: 'public-readonly' },          // Always visible
+        { name: 'about-us', type: 'text', permissions: 'public-readonly' },       // Always visible
         { name: 'announcements', type: 'text', permissions: 'verified-readonly' },
-        { name: 'welcome', type: 'text', permissions: 'public-readonly' },
-        { name: 'verify', type: 'text', permissions: 'public-verify' },
-        { name: 'rules', type: 'text', permissions: 'public-readonly' },
-        { name: 'role-info', type: 'text', permissions: 'public-readonly' },
-        { name: 'role-unlocks', type: 'text', permissions: 'public-readonly' },
-        { name: 'roles', type: 'text', permissions: 'verified-react' },
-        { name: 'bot-commands', type: 'text', permissions: 'game-role-readonly' } // Visible if GTA OR RDO role
+        { name: 'role-info', type: 'text', permissions: 'verified-readonly' },    // Only after verify
+        { name: 'role-unlocks', type: 'text', permissions: 'verified-readonly' }, // Only after verify
+        { name: 'roles', type: 'text', permissions: 'verified-react' },           // Only after verify
+        { name: 'bot-commands', type: 'text', permissions: 'game-role-readonly' }
       ]
     },
     
@@ -564,6 +565,10 @@ Existing channels will NOT be deleted, but this will add a lot of new stuff.
     await updateStatus(statusChannel, '👋 Setting up welcome message...');
     await setupWelcomeMessage(createdChannels);
     
+    // Send about-us
+    await updateStatus(statusChannel, '📖 Setting up about-us...');
+    await setupAboutUs(createdChannels);
+    
     // Send verification embed
     await updateStatus(statusChannel, '🔐 Setting up verification...');
     await setupVerification(createdChannels, createdRoles);
@@ -813,6 +818,26 @@ async function setupPermissions(guild, roles, channels) {
             );
             break;
           
+          // UNVERIFIED ONLY - Hidden after verification
+          case 'unverified-only':
+            permOverwrites.push(
+              { id: everyoneRole.id, deny: [PermissionFlagsBits.SendMessages], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory] },
+              ...(verifiedRole ? [{ id: verifiedRole.id, deny: [PermissionFlagsBits.ViewChannel] }] : []), // Hide from verified
+              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
+              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles] }))
+            );
+            break;
+          
+          case 'unverified-only-react':
+            // For verify channel - unverified can see and click buttons, hidden after verify
+            permOverwrites.push(
+              { id: everyoneRole.id, deny: [PermissionFlagsBits.SendMessages], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] },
+              ...(verifiedRole ? [{ id: verifiedRole.id, deny: [PermissionFlagsBits.ViewChannel] }] : []), // Hide from verified
+              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
+              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] }))
+            );
+            break;
+          
           // VERIFIED ONLY
           case 'verified':
             permOverwrites.push(
@@ -1009,6 +1034,65 @@ async function setupWelcomeMessage(channels) {
     .setTimestamp();
   
   await welcomeChannel.send({ embeds: [embed] });
+}
+
+async function setupAboutUs(channels) {
+  const aboutChannel = channels['about-us'];
+  if (!aboutChannel) return;
+  
+  const embed = new EmbedBuilder()
+    .setTitle('📖 ABOUT THE UNPATCHED METHOD')
+    .setDescription(`**The premier Rockstar glitch grinding community.**
+
+We're a community of GTA Online and Red Dead Online players who grind together using efficient methods. No modding, no scamming, no bullshit - just smart grinding with reliable people.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**🎮 WHAT WE DO**
+
+**GTA Online:**
+• Cayo Perico B2B - Back-to-back heists without setups
+• Casino Heists - Big Con, S&S, Aggressive
+• All other heists with reliable crews
+
+**Red Dead Online:**
+• Wagon Duplication - 11 dupes in 15 mins = $2,750+
+• Bounty Hunting - Regular and legendary bounties
+• Trader/Moonshine deliveries
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**🤖 OUR AI BOTS**
+
+We have 5 AI-powered bots that help run the server:
+• **Lester** - Server management & moderation
+• **Pavel** - GTA heist LFG system
+• **Cripps** - RDO wagon LFG system
+• **Madam Nazar** - Daily location updates
+• **Police Chief** - Bounty LFG system
+
+They understand natural language - just talk to them!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**📊 PROGRESSION SYSTEM**
+
+Earn roles by:
+• Time in server (7 days, 30 days, 90 days)
+• Activity (messages, voice, reactions)
+• Completions (heists, wagons, bounties)
+
+Check #role-unlocks after verifying to see all earnable roles!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**🎮 PLATFORM**
+PlayStation 4 & PlayStation 5 only.`)
+    .setColor(0x5865F2)
+    .setFooter({ text: 'The Unpatched Method - Est. 2024' })
+    .setTimestamp();
+  
+  await aboutChannel.send({ embeds: [embed] });
 }
 
 async function setupVerification(channels, roles) {
@@ -1879,6 +1963,3 @@ Server is now empty. Run \`?setup\` to rebuild.`)
 }
 
 module.exports = { execute, executeReset, executeNuke, updateStatsChannels };
-
-// Updated 12/23/2025 17:32:32
-// v2 12/23/2025 17:37:51

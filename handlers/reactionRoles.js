@@ -404,4 +404,4 @@ async function logRoleChange(guild, member, role, action) {
   }
 }
 
-module.exports = { initialize };
+module.exports = { initialize, setupReactionRoles: initialize };
