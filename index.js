@@ -201,12 +201,16 @@ async function checkShouldRespond(message) {
   // NEVER respond in counting channel
   if (message.channel.name === 'counting') return false;
   
-  if (message.channel.name === 'talk-to-lester') return true;
+  // NEVER respond in OTHER bots' talk-to channels
+  const channelName = message.channel.name;
+  if (channelName.startsWith('talk-to-') && channelName !== 'talk-to-lester') return false;
+  
+  if (channelName === 'talk-to-lester') return true;
   if (isInActiveConversation(message.channel.id, message.author.id)) return true;
   if (message.mentions.has(client.user)) return true;
   const content = message.content.toLowerCase();
   if (content.includes('lester') || content.includes('mastermind') || content.includes('heist')) return true;
-  if (message.channel.name.includes('log') || message.channel.name.includes('staff')) return false;
+  if (channelName.includes('log') || channelName.includes('staff')) return false;
   if (freeRoam) { const d = await freeRoam.shouldRespond(message); if (d.respond) return true; }
   if (isOtherBot(message.author.id)) return Math.random() < 0.35;
   return Math.random() < 0.15;
@@ -318,6 +322,9 @@ client.on(Events.MessageCreate, async (message) => {
       try { await commands[cmd](); } catch (e) { console.error(`Cmd ${cmd}:`, e); message.reply("Something broke."); } 
       return; 
     }
+    
+    // Don't respond to unknown commands in LFG channels (let other bots handle them)
+    if (channelName.includes('lfg')) return;
   }
   
   if (await checkShouldRespond(message)) await generateResponse(message);
