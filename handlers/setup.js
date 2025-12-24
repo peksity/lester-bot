@@ -2020,4 +2020,12 @@ Server is now empty. Run \`?setup\` to rebuild.`)
   }
 }
 
-module.exports = { execute, executeReset, executeNuke, updateStatsChannels };
+module.exports = { 
+  execute, 
+  executeReset, 
+  executeNuke, 
+  updateStatsChannels,
+  // Aliases for index.js
+  reset: executeReset,
+  nuke: executeNuke
+};
