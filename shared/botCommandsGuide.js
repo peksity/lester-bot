@@ -116,17 +116,17 @@ async function postBotCommandsGuide(client) {
     .addFields(
       { 
         name: '🎯 ?cayo - Advanced Heist LFG', 
-        value: '```diff\n+ Private DM setup wizard\n+ Select GTA version (PS4/PS5)\n+ Enter PSN username\n+ Pick target (Pink Diamond, etc)\n+ Choose approach\n+ Toggle B2B mode\n+ Auto voice in GTA category```', 
+        value: '```diff\n+ In-channel setup (only you see)\n+ Platform: PS4/PS5/Cross-Gen\n+ Primary Target with payouts\n+ Secondary Loot selection\n+ Approach (Drainage = best)\n+ B2B toggle for grinding\n+ Auto voice channel```', 
         inline: false 
       },
       { 
-        name: '🎮 Host Controls', 
-        value: '> ◆ Kick players with dropdown\n> ◆ **Blacklist** - Block forever\n> ◆ Ready Up → **Complete**\n> ◆ Voice auto-deletes on finish', 
+        name: '💰 Payout Info Shown', 
+        value: '> 💎 Pink Diamond: $1.43M\n> 📜 Bearer Bonds: $1.21M\n> 🥇 Gold: ~$500K/stack\n> Host vs Crew % displayed', 
         inline: true 
       },
       { 
-        name: '💬 Natural Language', 
-        value: '> *"anyone wanna do cayo?"*\n> *"need 2 for heist"*\n> Pavel understands!', 
+        name: '🎮 Features', 
+        value: '> ◆ Join/Leave/Voice buttons\n> ◆ Heist counter (B2B)\n> ◆ Kick + Blacklist\n> ◆ Total earnings tracked', 
         inline: true 
       }
     )
@@ -148,17 +148,17 @@ async function postBotCommandsGuide(client) {
     .addFields(
       { 
         name: '🛒 ?wagon - Advanced Wagon LFG', 
-        value: '```diff\n+ Private DM setup wizard\n+ Select console (PS4/PS5)\n+ Enter PSN username\n+ Delivery type (Local/Long)\n+ Set wagon count\n+ Auto voice in Red Dead category```', 
+        value: '```diff\n+ In-channel setup (only you see)\n+ Platform: PS4/PS5/Cross-Gen\n+ Wagon Size: Small/Med/Large\n+ Delivery: Local or Distant\n+ Dupe toggle for grinding\n+ Auto voice channel```', 
         inline: false 
       },
       { 
-        name: '🎮 Host Controls', 
-        value: '> ◆ Kick players with dropdown\n> ◆ **Blacklist** - Block forever\n> ◆ Ready Up → **Complete**\n> ◆ Voice auto-deletes on finish', 
+        name: '💰 Payout Info Shown', 
+        value: '> 🐌 Small: ~$62.50\n> 🚚 Medium: ~$150\n> 🐂 Large: ~$500-625\n> Host 100% / Posse ~50%', 
         inline: true 
       },
       { 
-        name: '💬 Natural Language', 
-        value: '> *"need help with wagon"*\n> *"long distance anyone?"*\n> Cripps understands!', 
+        name: '🎮 Features', 
+        value: '> ◆ Join/Leave/Voice buttons\n> ◆ **Dupe counter** 💰\n> ◆ Kick + Blacklist\n> ◆ Total earnings tracked', 
         inline: true 
       }
     )
@@ -180,17 +180,17 @@ async function postBotCommandsGuide(client) {
     .addFields(
       { 
         name: '💀 ?bounty - Advanced Bounty LFG', 
-        value: '```diff\n+ Private DM setup wizard\n+ Select console (PS4/PS5)\n+ Enter PSN username\n+ Bounty type (Regular/Legendary)\n+ Pick target (Etta Doyle, etc)\n+ Strategy (Speed/Timer)\n+ Auto voice in Red Dead category```', 
+        value: '```diff\n+ In-channel setup (only you see)\n+ Platform: PS4/PS5/Cross-Gen\n+ Regular or Legendary bounty\n+ Timer strategy (12min/AFK)\n+ Legendary: Pick target + stars\n+ Auto voice channel```', 
         inline: false 
       },
       { 
-        name: '🎮 Host Controls', 
-        value: '> ◆ Kick players with dropdown\n> ◆ **Blacklist** - Block forever\n> ◆ Ready Up → **Complete**\n> ◆ Voice auto-deletes on finish', 
+        name: '💰 Payout Info Shown', 
+        value: '> ⏱️ 12 min: ~$40 + 0.24 gold\n> 😴 30 min AFK: ~$60 + 0.48g\n> ⭐⭐⭐⭐⭐ Legendary: $225\n> 📖 Catalogue tip for AFK!', 
         inline: true 
       },
       { 
-        name: '💬 Natural Language', 
-        value: '> *"etta doyle?"*\n> *"legendary bounty anyone?"*\n> Chief understands!', 
+        name: '🎮 Features', 
+        value: '> ◆ Join/Leave/Voice buttons\n> ◆ **Bounty counter** 🎯\n> ◆ Cash + Gold tracked\n> ◆ Everyone = same pay!', 
         inline: true 
       }
     )
