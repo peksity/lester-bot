@@ -373,7 +373,11 @@ client.on(Events.MessageCreate, async (message) => {
       'lb': () => handleLeaderboard(message, args),
       
       // BOT COMMANDS GUIDE
-      'postguide': () => botCommandsGuide ? botCommandsGuide.handlePostGuideCommand(message, client) : message.reply('Guide system not loaded.')
+      'postguide': () => botCommandsGuide ? botCommandsGuide.handlePostGuideCommand(message, client) : message.reply('Guide system not loaded.'),
+      
+      // STATS CATEGORY SETUP
+      'setupstats': () => handleSetupStats(message),
+      'deletestats': () => handleDeleteStats(message)
     };
     
     if (commands[cmd]) { 
@@ -665,6 +669,97 @@ client.on(Events.VoiceStateUpdate, async (o, n) => {
   try { await loggingHandler.voiceStateUpdate(o, n, client); } catch (e) {}
 });
 client.on(Events.MessageReactionAdd, async (r, u) => { if (u.bot) return; if (intelligence && r.message.author?.id === client.user.id) await intelligence.handleReaction(r.message.id, r.emoji.name, u.id); });
+
+// ═══════════════════════════════════════════════════════════════
+// STATS CATEGORY SETUP
+// ═══════════════════════════════════════════════════════════════
+async function handleSetupStats(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('❌ Admin only.');
+  }
+  
+  try {
+    const guild = message.guild;
+    
+    // Delete old stats category if exists
+    const oldCategory = guild.channels.cache.find(c => c.name === '📊 SERVER STATS' && c.type === 4);
+    if (oldCategory) {
+      for (const channel of oldCategory.children.cache.values()) {
+        await channel.delete().catch(() => {});
+      }
+      await oldCategory.delete().catch(() => {});
+    }
+    
+    // Create new category at the top
+    const category = await guild.channels.create({
+      name: '📊 SERVER STATS',
+      type: 4, // Category
+      position: 0
+    });
+    
+    // Fetch members with presence
+    await guild.members.fetch({ withPresences: true });
+    
+    const memberCount = guild.memberCount;
+    let onlineCount = 0;
+    for (const [id, member] of guild.members.cache) {
+      if (member.user.bot) continue;
+      const status = member.presence?.status;
+      if (status === 'online' || status === 'idle' || status === 'dnd') {
+        onlineCount++;
+      }
+    }
+    const botCount = guild.members.cache.filter(m => m.user.bot).size;
+    
+    // Create voice channels (locked so no one can join)
+    const channelOptions = {
+      type: 2, // Voice
+      parent: category.id,
+      permissionOverwrites: [
+        {
+          id: guild.id,
+          deny: [PermissionFlagsBits.Connect]
+        }
+      ]
+    };
+    
+    await guild.channels.create({ name: `👥 Members: ${memberCount}`, ...channelOptions });
+    await guild.channels.create({ name: `🟢 Online: ${onlineCount}`, ...channelOptions });
+    await guild.channels.create({ name: `🤖 Bots: ${botCount}`, ...channelOptions });
+    
+    await message.reply(`✅ **Stats category created!**\n\n📊 SERVER STATS\n├ 👥 Members: ${memberCount}\n├ 🟢 Online: ${onlineCount}\n└ 🤖 Bots: ${botCount}\n\n*Updates every 5 minutes automatically.*`);
+    
+  } catch (e) {
+    console.error('Setup stats error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
+
+async function handleDeleteStats(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('❌ Admin only.');
+  }
+  
+  try {
+    const guild = message.guild;
+    const category = guild.channels.cache.find(c => c.name === '📊 SERVER STATS' && c.type === 4);
+    
+    if (!category) {
+      return message.reply('❌ No stats category found.');
+    }
+    
+    for (const channel of category.children.cache.values()) {
+      await channel.delete().catch(() => {});
+    }
+    await category.delete();
+    
+    await message.reply('✅ Stats category deleted.');
+    
+  } catch (e) {
+    console.error('Delete stats error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
 
 client.on('error', console.error);
 process.on('unhandledRejection', console.error);
