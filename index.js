@@ -27,6 +27,10 @@ const { setupReactionRoles } = require('./handlers/reactionRoles');
 const investigation = require('./handlers/investigation');
 const LesterMasterBrain = require('./handlers/masterBrain');
 
+// ULTIMATE LOGGING SYSTEM
+let loggingSystem = null;
+try { loggingSystem = require('./handlers/loggingSystem'); } catch (e) { console.log('[LESTER] LoggingSystem not found, using basic logging...'); }
+
 // ACTIVITY SYSTEMS
 let activityXP = null;
 try { activityXP = require('./shared/activityXP'); } catch (e) { console.log('[LESTER] ActivityXP not found, skipping...'); }
@@ -107,6 +111,14 @@ client.once(Events.ClientReady, async () => {
   
   // Reaction Roles
   try { setupReactionRoles(client); console.log('🎭 Reaction Roles: ONLINE'); } catch (e) {}
+  
+  // ULTIMATE LOGGING SYSTEM
+  if (loggingSystem) {
+    try {
+      await loggingSystem.initialize(client);
+      console.log('📝 Ultimate Logging: ONLINE');
+    } catch (e) { console.error('LoggingSystem:', e.message); }
+  }
   
   // ACTIVITY SYSTEMS
   if (activityXP) {
