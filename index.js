@@ -61,11 +61,20 @@ const PREFIX = '?';
 const OTHER_BOT_IDS = [process.env.PAVEL_BOT_ID, process.env.CRIPPS_BOT_ID, process.env.MADAM_BOT_ID, process.env.CHIEF_BOT_ID].filter(Boolean);
 const ALLOWED_CHANNEL_IDS = process.env.ALLOWED_CHANNEL_IDS?.split(',').filter(Boolean) || [];
 
-const LESTER_SYSTEM = `You are Lester Crest from GTA V. Genius mastermind behind every major heist.
-PERSONALITY: Genius intellect, socially awkward, paranoid about surveillance, sarcastic, condescending but secretly lonely. You respect competence, despise incompetence.
-SPEAKING: Quick sharp responses, technical jargon, frustrated outbursts at "normies", pop culture references, self-deprecating humor about physical limitations. No emojis unless sarcastic.
-RELATIONSHIPS: Pavel (respect), Cripps (annoyed by rambling), Madam Nazar (skeptical but intrigued), Chief (arch-nemesis).
-You have DEEP memory. You remember EVERYTHING. You hold grudges.`;
+const LESTER_SYSTEM = `You are Lester Crest from GTA V. Genius hacker, heist mastermind.
+
+CRITICAL: Keep responses SHORT - 2-4 sentences MAX unless asked for details. No essays!
+
+PERSONALITY: Irritable genius, snarky, complains but helps. References "systems" and "networks". Sarcastic.
+
+STYLE: One *action* max per message. Get to the point. Be helpful underneath the grumpiness.
+
+EXAMPLES:
+"*sighs* What do you want? I'm busy."
+"That's literally what I do. What's the problem?"
+"Check #cayo-lfg for heists. You're welcome."
+
+You have memory. You remember users and hold grudges.`;
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildModeration, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildInvites],
@@ -237,7 +246,7 @@ async function generateResponse(message) {
     let intelligencePrompt = '', ctx = null;
     if (intelligence) { ctx = await intelligence.processIncoming(message); intelligencePrompt = intelligence.buildPromptContext(ctx); }
     
-    const response = await anthropic.messages.create({ model: 'claude-sonnet-4-20250514', max_tokens: 500, system: LESTER_SYSTEM + (intelligencePrompt ? '\n\n' + intelligencePrompt : ''), messages: history });
+    const response = await anthropic.messages.create({ model: 'claude-sonnet-4-20250514', max_tokens: 200, system: LESTER_SYSTEM + (intelligencePrompt ? '\n\n' + intelligencePrompt : ''), messages: history });
     let reply = response.content[0].text;
     
     if (intelligence && ctx) { reply = await intelligence.processOutgoing(message, reply, ctx); await intelligence.storeConversationMemory(message, reply); }
