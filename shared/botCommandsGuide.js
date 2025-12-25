@@ -84,17 +84,17 @@ async function postBotCommandsGuide(client) {
     .addFields(
       { 
         name: '🔧 Utility', 
-        value: '```\n?help     - Commands\n?ping     - Latency\n?mood     - His mood\n?rep @usr - Reputation```', 
+        value: '```\n?help     - Commands\n?ping     - Latency\n?mood     - His mood\n?rep @usr - Reputation\n?memory   - Your memory```', 
         inline: true 
       },
       { 
         name: '📊 Info', 
-        value: '```\n?serverinfo - Stats\n?userinfo   - User info\n?gunvan     - Gun Van\n?countrecord```', 
+        value: '```\n?serverinfo - Stats\n?userinfo   - User info\n?avatar     - Avatar\n?gunvan     - Gun Van\n?countrecord```', 
         inline: true 
       },
       { 
         name: '⚙️ Admin', 
-        value: '```\n?setup - Server setup\n?nuke  - Reset server```', 
+        value: '```\n?setup   - Server setup\n?nuke    - Reset server\n?postguide - Update this```', 
         inline: true 
       }
     )

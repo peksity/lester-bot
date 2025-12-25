@@ -343,6 +343,10 @@ client.on(Events.MessageCreate, async (message) => {
       'memory': () => memoryHandler.showMemory(message, args, client),
       'forgetme': () => memoryHandler.forgetUser(message, client),
       
+      // MOOD & REP
+      'mood': () => handleMood(message),
+      'rep': () => handleRep(message, args),
+      
       // VOICE
       'voice': () => handleVoice(message, args),
       'speak': () => handleSpeak(message, args),
@@ -417,6 +421,72 @@ async function sendAvatar(message) {
   const embed = new EmbedBuilder().setTitle(`🖼️ ${t.tag}`).setImage(t.displayAvatarURL({ dynamic: true, size: 1024 })).setColor(0x00FF00)
     .addFields({ name: '🔗 Links', value: `[PNG](${t.displayAvatarURL({ format: 'png', size: 1024 })}) | [JPG](${t.displayAvatarURL({ format: 'jpg', size: 1024 })})` });
   await message.reply({ embeds: [embed] });
+}
+
+async function handleMood(message) {
+  try {
+    // Try to get mood from hivemind
+    const moodSystem = require('./shared/hivemind/moodSystem');
+    const mood = moodSystem?.getCurrentMood?.('lester') || { mood: 'irritated', energy: 65 };
+    
+    const moodEmojis = {
+      happy: '😊', irritated: '😤', tired: '😴', excited: '🤩', 
+      suspicious: '🤨', annoyed: '😒', helpful: '🤓', grumpy: '😠'
+    };
+    
+    const embed = new EmbedBuilder()
+      .setTitle(`${moodEmojis[mood.mood] || '😐'} Lester's Mood`)
+      .setDescription(`*adjusts glasses* You really want to know how I'm feeling?`)
+      .addFields(
+        { name: 'Current Mood', value: mood.mood.charAt(0).toUpperCase() + mood.mood.slice(1), inline: true },
+        { name: 'Energy', value: `${mood.energy || 50}/100`, inline: true }
+      )
+      .setColor(mood.mood === 'happy' ? 0x00FF00 : mood.mood === 'irritated' ? 0xFF6600 : 0xFFFF00)
+      .setFooter({ text: 'Mood changes based on time and interactions' });
+    
+    await message.reply({ embeds: [embed] });
+  } catch (e) {
+    await message.reply("*sighs* I'm fine. Stop asking.");
+  }
+}
+
+async function handleRep(message, args) {
+  try {
+    const target = message.mentions.users.first() || message.author;
+    
+    // Try to get rep from database
+    let rep = 50; // Default
+    try {
+      const result = await pool.query(
+        'SELECT reputation FROM user_reputation WHERE user_id = $1',
+        [target.id]
+      );
+      if (result.rows[0]) rep = result.rows[0].reputation;
+    } catch (e) {
+      // Table might not exist, use default
+    }
+    
+    let status = 'Neutral';
+    let color = 0xFFFF00;
+    if (rep >= 80) { status = 'Excellent'; color = 0x00FF00; }
+    else if (rep >= 60) { status = 'Good'; color = 0x88FF00; }
+    else if (rep >= 40) { status = 'Neutral'; color = 0xFFFF00; }
+    else if (rep >= 20) { status = 'Poor'; color = 0xFF8800; }
+    else { status = 'Bad'; color = 0xFF0000; }
+    
+    const embed = new EmbedBuilder()
+      .setTitle(`⭐ ${target.username}'s Reputation`)
+      .addFields(
+        { name: 'Score', value: `${rep}/100`, inline: true },
+        { name: 'Status', value: status, inline: true }
+      )
+      .setColor(color)
+      .setFooter({ text: 'Complete LFGs to gain rep • Abandon to lose rep' });
+    
+    await message.reply({ embeds: [embed] });
+  } catch (e) {
+    await message.reply("*types* Can't pull up their record right now.");
+  }
 }
 
 async function handleVoice(message, args) {
