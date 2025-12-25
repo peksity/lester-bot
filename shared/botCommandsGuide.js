@@ -1,32 +1,49 @@
 /**
  * BOT COMMANDS GUIDE - GTA 6 THEMED EMBEDS
- * Posts a beautiful multi-embed guide to #bot-commands
- * 
- * Usage: ?postguide (admin only)
+ * Auto-posts to #bot-commands on startup
+ * Also available via ?postguide command
  */
 
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 
 // GTA 6 Color Palette
 const COLORS = {
-  pink: 0xFF0080,      // Hot pink
-  orange: 0xFF6B35,    // Sunset orange
-  teal: 0x00D4AA,      // Vice teal
-  purple: 0x8B5CF6,    // Neon purple
-  blue: 0x0099FF,      // Ocean blue
-  gold: 0xFFD700,      // Gold
-  red: 0xFF3333,       // Red
-  darkPink: 0xC71585,  // Deep pink
+  pink: 0xFF0080,
+  orange: 0xFF6B35,
+  teal: 0x00D4AA,
+  purple: 0x8B5CF6,
+  blue: 0x0099FF,
+  gold: 0xFFD700,
+  red: 0xFF3333,
+  darkPink: 0xC71585,
 };
 
-async function postBotCommandsGuide(channel) {
+const BOT_COMMANDS_CHANNEL_ID = '1453304719605895169';
+
+async function postBotCommandsGuide(client) {
+  const channel = client.channels.cache.get(BOT_COMMANDS_CHANNEL_ID);
+  if (!channel) {
+    console.log('[GUIDE] Bot commands channel not found');
+    return false;
+  }
+
+  // Delete old messages in channel (last 50)
+  try {
+    const messages = await channel.messages.fetch({ limit: 50 });
+    if (messages.size > 0) {
+      await channel.bulkDelete(messages, true).catch(() => {});
+    }
+  } catch (e) {
+    console.log('[GUIDE] Could not clear old messages');
+  }
+
   const embeds = [];
 
   // ═══════════════════════════════════════════════════════════════
   // HEADER EMBED
   // ═══════════════════════════════════════════════════════════════
   embeds.push(new EmbedBuilder()
-    .setTitle('```🤖 NEXUS AI-POWERED BOTS```')
+    .setTitle('🤖 NEXUS AI-POWERED BOTS')
     .setDescription(`
 **━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━**
 
@@ -50,7 +67,6 @@ async function postBotCommandsGuide(channel) {
 **━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━**
     `)
     .setColor(COLORS.pink)
-    .setImage('https://i.imgur.com/8QlbCGe.png') // You can add a custom banner image
   );
 
   // ═══════════════════════════════════════════════════════════════
@@ -83,7 +99,6 @@ async function postBotCommandsGuide(channel) {
       }
     )
     .setColor(COLORS.orange)
-    .setThumbnail('https://i.imgur.com/LESTER_ICON.png') // Replace with actual icon
   );
 
   // ═══════════════════════════════════════════════════════════════
@@ -101,12 +116,12 @@ async function postBotCommandsGuide(channel) {
     .addFields(
       { 
         name: '🎯 ?cayo - Advanced Heist LFG', 
-        value: '```diff\n+ Select GTA version (PS4/PS5)\n+ Enter PSN username\n+ Pick target (Pink Diamond, etc)\n+ Choose approach\n+ Toggle B2B mode\n+ Auto voice channel\n+ Private setup until recruiting```', 
+        value: '```diff\n+ Private DM setup wizard\n+ Select GTA version (PS4/PS5)\n+ Enter PSN username\n+ Pick target (Pink Diamond, etc)\n+ Choose approach\n+ Toggle B2B mode\n+ Auto voice in GTA category```', 
         inline: false 
       },
       { 
         name: '🎮 Host Controls', 
-        value: '> ◆ Kick players\n> ◆ **Blacklist** - Block forever\n> ◆ Ready Up → **Complete**\n> ◆ Auto voice in GTA category', 
+        value: '> ◆ Kick players with dropdown\n> ◆ **Blacklist** - Block forever\n> ◆ Ready Up → **Complete**\n> ◆ Voice auto-deletes on finish', 
         inline: true 
       },
       { 
@@ -133,12 +148,12 @@ async function postBotCommandsGuide(channel) {
     .addFields(
       { 
         name: '🛒 ?wagon - Advanced Wagon LFG', 
-        value: '```diff\n+ Select console (PS4/PS5)\n+ Enter PSN username\n+ Delivery type (Local/Long)\n+ Set wagon count\n+ Auto voice channel\n+ Private setup until recruiting```', 
+        value: '```diff\n+ Private DM setup wizard\n+ Select console (PS4/PS5)\n+ Enter PSN username\n+ Delivery type (Local/Long)\n+ Set wagon count\n+ Auto voice in Red Dead category```', 
         inline: false 
       },
       { 
         name: '🎮 Host Controls', 
-        value: '> ◆ Kick players\n> ◆ **Blacklist** - Block forever\n> ◆ Ready Up → **Complete**\n> ◆ Auto voice in Red Dead category', 
+        value: '> ◆ Kick players with dropdown\n> ◆ **Blacklist** - Block forever\n> ◆ Ready Up → **Complete**\n> ◆ Voice auto-deletes on finish', 
         inline: true 
       },
       { 
@@ -165,12 +180,12 @@ async function postBotCommandsGuide(channel) {
     .addFields(
       { 
         name: '💀 ?bounty - Advanced Bounty LFG', 
-        value: '```diff\n+ Select console (PS4/PS5)\n+ Enter PSN username\n+ Bounty type (Regular/Legendary)\n+ Pick target (Etta Doyle, etc)\n+ Strategy (Speed/Timer)\n+ Auto voice channel\n+ Private setup until recruiting```', 
+        value: '```diff\n+ Private DM setup wizard\n+ Select console (PS4/PS5)\n+ Enter PSN username\n+ Bounty type (Regular/Legendary)\n+ Pick target (Etta Doyle, etc)\n+ Strategy (Speed/Timer)\n+ Auto voice in Red Dead category```', 
         inline: false 
       },
       { 
         name: '🎮 Host Controls', 
-        value: '> ◆ Kick players\n> ◆ **Blacklist** - Block forever\n> ◆ Ready Up → **Complete**\n> ◆ Auto voice in Red Dead category', 
+        value: '> ◆ Kick players with dropdown\n> ◆ **Blacklist** - Block forever\n> ◆ Ready Up → **Complete**\n> ◆ Voice auto-deletes on finish', 
         inline: true 
       },
       { 
@@ -201,7 +216,7 @@ async function postBotCommandsGuide(channel) {
       },
       { 
         name: '📍 Location', 
-        value: '```\n?location - Find Nazar today\n?where    - Same as above```', 
+        value: '```\n?nazar    - Find Nazar today\n?where    - Same as above```', 
         inline: true 
       }
     )
@@ -232,7 +247,7 @@ HOW IT WORKS:
       },
       { 
         name: '✨ Features', 
-        value: '> ◆ Works across **ALL** LFG types\n> ◆ Blacklisted users get notified\n> ◆ Persists forever until you unblock\n> ◆ Voice auto-deletes on Complete/Cancel\n> ◆ Cayo → GTA category\n> ◆ Wagon/Bounty → Red Dead category', 
+        value: '> ◆ Works across **ALL** LFG types\n> ◆ Blacklisted users get notified\n> ◆ Persists forever until you unblock\n> ◆ Voice auto-deletes on Complete/Cancel\n> ◆ **Cayo** → GTA category\n> ◆ **Wagon/Bounty** → Red Dead category', 
         inline: false 
       }
     )
@@ -314,7 +329,6 @@ HOW IT WORKS:
   );
 
   // Post all embeds (Discord allows 10 per message)
-  // Split into batches if needed
   try {
     // First batch (5 embeds)
     await channel.send({ embeds: embeds.slice(0, 5) });
@@ -324,7 +338,7 @@ HOW IT WORKS:
       await channel.send({ embeds: embeds.slice(5, 10) });
     }
     
-    console.log('[GUIDE] Posted bot commands guide');
+    console.log('[GUIDE] ✅ Posted bot commands guide to #bot-commands');
     return true;
   } catch (e) {
     console.error('[GUIDE] Error posting:', e.message);
@@ -332,31 +346,20 @@ HOW IT WORKS:
   }
 }
 
-// Command handler
+// Command handler for ?postguide
 async function handlePostGuideCommand(message, client) {
-  // Admin only
   if (!message.member.permissions.has('Administrator')) {
     return message.reply('❌ Admin only.');
   }
 
-  const targetChannel = client.channels.cache.get('1453304719605895169');
-  
-  if (!targetChannel) {
-    return message.reply('❌ Cannot find bot-commands channel.');
-  }
-
-  // Delete existing messages in channel (optional)
-  // await targetChannel.bulkDelete(100).catch(() => {});
-
-  await message.reply('📝 Posting guide to #bot-commands...');
-  
-  const success = await postBotCommandsGuide(targetChannel);
+  await message.reply('📝 Updating #bot-commands guide...');
+  const success = await postBotCommandsGuide(client);
   
   if (success) {
-    await message.channel.send('✅ Guide posted!');
+    await message.channel.send('✅ Guide updated!');
   } else {
     await message.channel.send('❌ Failed to post guide.');
   }
 }
 
-module.exports = { postBotCommandsGuide, handlePostGuideCommand };
+module.exports = { postBotCommandsGuide, handlePostGuideCommand, BOT_COMMANDS_CHANNEL_ID };
