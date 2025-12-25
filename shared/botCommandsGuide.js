@@ -207,17 +207,13 @@ async function postBotCommandsGuide(client) {
 *"The spirits have much to tell..."*
 
 > 💬 **Chat:** #talk-to-nazar
+> 📍 **Daily Location:** #madam-nazar (auto-updates)
     `)
     .addFields(
       { 
-        name: '🔮 Fortune Telling', 
-        value: '```\n?fortune  - Get a prediction\n?reading  - Tarot reading```', 
-        inline: true 
-      },
-      { 
-        name: '📍 Location', 
-        value: '```\n?nazar    - Find Nazar today\n?where    - Same as above```', 
-        inline: true 
+        name: '🔮 Commands', 
+        value: '```\n?fortune  - Get a prediction\n?help     - Show commands\n?ping     - Latency```', 
+        inline: false 
       }
     )
     .setFooter({ text: '✨ She remembers her predictions and may bring them up later...' })
