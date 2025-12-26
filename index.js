@@ -234,6 +234,57 @@ client.once(Events.ClientReady, async () => {
     } catch (e) { console.error('Stats update error:', e.message); }
   }, 5 * 60 * 1000); // Every 5 minutes
   
+  // INNER LIFE: Autonomous thought loop (Lester is the "lead" bot for this)
+  if (hiveMind?.innerLife) {
+    setInterval(async () => {
+      try {
+        // Find general-chat
+        const guild = client.guilds.cache.first();
+        if (!guild) return;
+        
+        const generalChat = guild.channels.cache.find(c => c.name === 'general-chat');
+        if (!generalChat) return;
+        
+        // Check if any bot should act autonomously
+        const action = await hiveMind.checkAutonomousAction(
+          guild.id, 
+          generalChat,
+          ['lester', 'pavel', 'cripps', 'nazar', 'chief']
+        );
+        
+        if (action?.type === 'thought' && action.botId === 'lester') {
+          // Lester has a thought
+          const thought = await hiveMind.innerLife.generateAutonomousThought(
+            'lester', 
+            generalChat, 
+            action.context
+          );
+          
+          if (thought) {
+            await generalChat.send(thought);
+            await hiveMind.innerLife.recordAutonomousSpeak('lester', guild.id);
+            console.log('[LESTER] Autonomous thought:', thought.slice(0, 50) + '...');
+          }
+        } else if (action?.type === 'botchat' && (action.bot1 === 'lester' || action.bot2 === 'lester')) {
+          // Bot-to-bot conversation involving Lester
+          const messages = await hiveMind.innerLife.generateBotInteraction(action.bot1, action.bot2);
+          
+          for (const msg of messages) {
+            if (msg.botId === 'lester') {
+              await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
+              await generalChat.send(msg.content);
+            }
+            // Other bots will handle their own messages via their own loops
+          }
+          
+          await hiveMind.innerLife.recordBotInteraction();
+        }
+      } catch (e) {
+        console.error('[LESTER] Inner life error:', e.message);
+      }
+    }, 120000); // Check every 2 minutes
+  }
+  
   console.log('═══════════════════════════════════════════════════════════════\nLESTER ULTIMATE - THE MASTERMIND IS ONLINE\n═══════════════════════════════════════════════════════════════');
   
   // Post bot commands guide on startup (after 5 second delay)
@@ -283,25 +334,29 @@ async function generateResponse(message) {
   try {
     await message.channel.sendTyping();
     
-    // Build context from multiple sources
+    // Build context from HiveMind + Inner Life
     let contextAdditions = '';
     
-    // Get mood from HiveMind
     if (hiveMind) {
+      // Get full context (memories + inner life)
+      const fullContext = await hiveMind.getFullContext(MY_BOT_ID, message);
+      if (fullContext) contextAdditions += fullContext;
+      
+      // Get mood
       const mood = await hiveMind.getBotMood(MY_BOT_ID);
       const moodPrompt = hiveMind.getMoodPrompt(mood);
       if (moodPrompt) contextAdditions += `\n\nCURRENT MOOD: ${moodPrompt}`;
       
-      // Get relevant memories
-      const memoryContext = await hiveMind.buildMemoryContext(message, MY_BOT_ID);
-      if (memoryContext) contextAdditions += memoryContext;
-      
       // Track user activity
       await hiveMind.trackUserActivity(message.author.id, message.author.username, message.guild?.id);
       
-      // Check if regular user
-      const isRegular = await hiveMind.isRegularUser(message.author.id);
-      if (isRegular) contextAdditions += '\n\nThis user is a regular - you\'ve talked to them many times before.';
+      // Update relationship
+      if (hiveMind.innerLife) {
+        await hiveMind.innerLife.updateUserRelationship(MY_BOT_ID, message.author.id, {
+          sentiment: 1, // Slight positive for engaging
+          note: message.content.slice(0, 100)
+        });
+      }
     }
     
     // Legacy intelligence system
