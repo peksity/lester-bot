@@ -112,8 +112,93 @@ let intelligence = null, masterBrain = null, nexusCore = null, freeRoam = null, 
 const conversationMemory = new Map();
 const activeConversations = new Map();
 
+// ═══════════════════════════════════════════════════════════════
+// SERVER LOCK - Bot only works in authorized servers
+// ═══════════════════════════════════════════════════════════════
+const AUTHORIZED_SERVERS = process.env.AUTHORIZED_SERVERS?.split(',') || [];
+const OWNER_ID = process.env.OWNER_ID || '';
+
+// ═══════════════════════════════════════════════════════════════
+// LICENSE KEY SYSTEM - Bot requires valid license to operate
+// ═══════════════════════════════════════════════════════════════
+const LICENSE_KEY = process.env.LICENSE_KEY || '';
+const LICENSE_SECRET = process.env.LICENSE_SECRET || 'UNPATCHED_METHOD_2024_SECURE';
+
+// Valid license keys (hashed for security)
+// In production, this would call YOUR API to validate
+const VALID_LICENSE_HASHES = [
+  // Add your license key hashes here
+  // Generated with: require('crypto').createHash('sha256').update(LICENSE_KEY + LICENSE_SECRET).digest('hex')
+];
+
+function generateLicenseHash(key) {
+  const crypto = require('crypto');
+  return crypto.createHash('sha256').update(key + LICENSE_SECRET).digest('hex');
+}
+
+function validateLicense() {
+  if (!LICENSE_KEY) {
+    console.error('═══════════════════════════════════════════════════════════════');
+    console.error('❌ LICENSE KEY MISSING');
+    console.error('This bot requires a valid license to operate.');
+    console.error('Set LICENSE_KEY in your environment variables.');
+    console.error('Contact the developer to purchase a license.');
+    console.error('═══════════════════════════════════════════════════════════════');
+    return false;
+  }
+  
+  const keyHash = generateLicenseHash(LICENSE_KEY);
+  
+  // Check against valid hashes OR if it matches the master key pattern
+  // Master key format: UNPATCHED-XXXX-XXXX-XXXX (owner's key always works)
+  const isMasterKey = LICENSE_KEY.startsWith('UNPATCHED-MASTER-');
+  const isValidHash = VALID_LICENSE_HASHES.includes(keyHash);
+  const isOwnerKey = LICENSE_KEY === process.env.MASTER_LICENSE; // Your personal master key
+  
+  if (!isMasterKey && !isValidHash && !isOwnerKey) {
+    console.error('═══════════════════════════════════════════════════════════════');
+    console.error('❌ INVALID LICENSE KEY');
+    console.error('The provided license key is not valid.');
+    console.error('Key:', LICENSE_KEY.slice(0, 8) + '...' + LICENSE_KEY.slice(-4));
+    console.error('Contact the developer to purchase a valid license.');
+    console.error('═══════════════════════════════════════════════════════════════');
+    return false;
+  }
+  
+  console.log('✅ License validated successfully');
+  return true;
+}
+
+// License check on startup
+if (!validateLicense()) {
+  console.error('Bot shutting down due to invalid license.');
+  process.exit(1);
+}
+
+function isAuthorizedServer(guildId) {
+  // If no servers specified, allow all (for development)
+  if (AUTHORIZED_SERVERS.length === 0) return true;
+  return AUTHORIZED_SERVERS.includes(guildId);
+}
+
 client.once(Events.ClientReady, async () => {
   console.log(`\n[LESTER ULTIMATE] Logged in as ${client.user.tag} | ${client.guilds.cache.size} servers\n`);
+  
+  // SERVER LOCK CHECK - Leave unauthorized servers
+  for (const [guildId, guild] of client.guilds.cache) {
+    if (!isAuthorizedServer(guildId)) {
+      console.log(`[SECURITY] Unauthorized server detected: ${guild.name} (${guildId}) - LEAVING`);
+      await guild.leave().catch(() => {});
+    }
+  }
+  
+  // Count authorized servers
+  const authorizedCount = client.guilds.cache.filter(g => isAuthorizedServer(g.id)).size;
+  console.log(`[SECURITY] Running in ${authorizedCount} authorized server(s)`);
+  
+  if (authorizedCount === 0 && AUTHORIZED_SERVERS.length > 0) {
+    console.log('[SECURITY] WARNING: Bot is not in any authorized servers!');
+  }
 
   // V6 Intelligence
   if (UltimateBotIntelligence) {
@@ -216,6 +301,10 @@ client.once(Events.ClientReady, async () => {
         
         const botCount = guild.members.cache.filter(m => m.user.bot).size;
         
+        // Count Inner Circle subscribers
+        const innerCircleRole = guild.roles.cache.find(r => r.name === '⭐ Inner Circle');
+        const subCount = innerCircleRole ? innerCircleRole.members.size : 0;
+        
         for (const channel of statsCategory.children.cache.values()) {
           if (channel.type !== 2) continue; // Voice channels only
           try {
@@ -225,11 +314,13 @@ client.once(Events.ClientReady, async () => {
               await channel.setName(`🟢 Online: ${onlineCount}`);
             } else if (channel.name.startsWith('🤖')) {
               await channel.setName(`🤖 Bots: ${botCount}`);
+            } else if (channel.name.startsWith('⭐')) {
+              await channel.setName(`⭐ Subscribers: ${subCount}`);
             }
           } catch (e) {}
         }
         
-        console.log(`[STATS] Updated: ${memberCount} members, ${onlineCount} online, ${botCount} bots`);
+        console.log(`[STATS] Updated: ${memberCount} members, ${onlineCount} online, ${botCount} bots, ${subCount} subs`);
       }
     } catch (e) { console.error('Stats update error:', e.message); }
   }, 5 * 60 * 1000); // Every 5 minutes
@@ -414,6 +505,11 @@ client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot && !isOtherBot(message.author.id)) return;
   if (message.author.id === client.user.id) return;
   if (!message.guild) { await generateResponse(message); return; }
+  
+  // SERVER LOCK - Ignore messages from unauthorized servers
+  if (!isAuthorizedServer(message.guild.id)) {
+    return; // Silently ignore
+  }
 
   const channelName = message.channel.name;
 
@@ -495,7 +591,25 @@ client.on(Events.MessageCreate, async (message) => {
       
       // STATS CATEGORY SETUP
       'setupstats': () => handleSetupStats(message),
-      'deletestats': () => handleDeleteStats(message)
+      'deletestats': () => handleDeleteStats(message),
+      
+      // PREMIUM SETUP
+      'setuppremium': () => handleSetupPremium(message),
+      'deletepremium': () => handleDeletePremium(message),
+      
+      // TERMS & TESTIMONIALS
+      'setuptos': () => handleSetupTOS(message),
+      'testimonial': () => handleTestimonial(message, args),
+      'review': () => handleTestimonial(message, args),
+      
+      // PREMIUM TIERS
+      'setuptiers': () => handleSetupTiers(message),
+      'deletetiers': () => handleDeleteTiers(message),
+      
+      // BLACKLIST (for payment abusers)
+      'blacklist': () => handleBlacklist(message, args),
+      'unblacklist': () => handleUnblacklist(message, args),
+      'blacklistcheck': () => handleBlacklistCheck(message, args)
     };
     
     if (commands[cmd]) { 
@@ -516,17 +630,20 @@ async function sendHelp(message) {
     .setDescription("*adjusts glasses* Fine, here's what I can do...")
     .addFields(
       { name: '⚙️ Admin', value: '`?setup` `?reset` `?nuke`' },
+      { name: '⭐ Premium', value: '`?setuppremium` `?deletepremium`' },
+      { name: '📊 Stats', value: '`?setupstats` `?deletestats`' },
       { name: '🔨 Moderation', value: '`?kick` `?ban` `?unban` `?mute` `?unmute` `?timeout`\n`?warn` `?warnings` `?clearwarnings` `?purge` `?slowmode`\n`?lock` `?unlock`' },
       { name: '🔍 Investigation', value: '`?investigate` `?evidence` `?record` `?watchlist` `?predict`' },
       { name: '🛡️ Scam', value: '`?addscam` `?removescam` `?scamlist` `?checklink`' },
       { name: '📊 Info', value: '`?serverinfo` `?userinfo` `?avatar` `?stats` `?leaderboard`' },
+      { name: '💰 Premium', value: '`?setuppremium` `?setuptiers` `?setuptos`\n`?testimonial` `?blacklist` `?unblacklist`' },
       { name: '🔫 Gun Van', value: '`?gunvan`' },
-      { name: '🔢 Counting', value: '`?countrecord`' },
+      { name: '🔢 Counting', value: '`?countrecord` `?fixcounting`' },
       { name: '🧠 Memory', value: '`?memory` `?forgetme`' },
       { name: '🎙️ Voice', value: '`?voice join/leave` `?speak` `?shutup`' }
     )
     .setColor(0x00FF00)
-    .setFooter({ text: 'ULTIMATE Edition + Activity Systems' });
+    .setFooter({ text: 'ULTIMATE Edition + Premium Systems' });
   await message.reply({ embeds: [embed] });
 }
 
@@ -781,7 +898,144 @@ client.on(Events.MessageUpdate, async (o, n) => { try { await loggingHandler.mes
 client.on(Events.GuildMemberAdd, async (m) => { try { await loggingHandler.memberJoined(m, client); } catch (e) {} });
 client.on(Events.GuildMemberRemove, async (m) => { try { await loggingHandler.memberLeft(m, client); } catch (e) {} });
 client.on(Events.GuildBanAdd, async (b) => { try { await loggingHandler.memberBanned(b, client); } catch (e) {} });
-client.on(Events.GuildMemberUpdate, async (o, n) => { try { await loggingHandler.memberUpdated(o, n, client); } catch (e) {} });
+
+// SERVER LOCK - Leave unauthorized servers immediately when added
+client.on(Events.GuildCreate, async (guild) => {
+  if (!isAuthorizedServer(guild.id)) {
+    console.log(`[SECURITY] Bot added to unauthorized server: ${guild.name} (${guild.id}) - LEAVING IMMEDIATELY`);
+    
+    // Try to message the owner before leaving
+    try {
+      const owner = await guild.fetchOwner();
+      await owner.send({
+        embeds: [new EmbedBuilder()
+          .setTitle('🚫 Unauthorized Server')
+          .setDescription(
+            `This bot is private and only operates in authorized servers.\n\n` +
+            `**Your server:** ${guild.name}\n` +
+            `**Status:** Not authorized\n\n` +
+            `If you believe this is an error, contact the bot owner.\n\n` +
+            `*This bot has left your server automatically.*`
+          )
+          .setColor(0xFF0000)
+          .setTimestamp()
+        ]
+      });
+    } catch (e) {}
+    
+    await guild.leave();
+    return;
+  }
+  
+  console.log(`[SECURITY] Bot added to authorized server: ${guild.name} (${guild.id})`);
+});
+
+client.on(Events.GuildMemberUpdate, async (o, n) => { 
+  try { await loggingHandler.memberUpdated(o, n, client); } catch (e) {} 
+  
+  // Check if Inner Circle role was added
+  try {
+    const innerCircleRole = n.guild.roles.cache.find(r => r.name === '⭐ Inner Circle');
+    if (!innerCircleRole) return;
+    
+    const hadRole = o.roles.cache.has(innerCircleRole.id);
+    const hasRole = n.roles.cache.has(innerCircleRole.id);
+    
+    // Role was just added
+    if (!hadRole && hasRole) {
+      console.log(`[PREMIUM] ${n.user.tag} joined Inner Circle!`);
+      
+      // Send DM with onboarding
+      const dmEmbed1 = new EmbedBuilder()
+        .setTitle('⭐ WELCOME TO THE INNER CIRCLE')
+        .setDescription(
+          `Hey ${n.user.username},\n\n` +
+          `You're officially one of us now. This isn't just a subscription—you're part of something exclusive.\n\n` +
+          `**Here's what just unlocked for you:**`
+        )
+        .setColor(0xFFB300)
+        .setThumbnail(n.guild.iconURL({ dynamic: true }));
+      
+      const dmEmbed2 = new EmbedBuilder()
+        .setTitle('🔓 YOUR ACCESS')
+        .setDescription(
+          `📜 **#confidential-agreement** - READ THIS FIRST\n` +
+          `💎 **#vip-lounge** - Chill with fellow supporters\n` +
+          `🎯 **#priority-lfg** - Skip the queue\n` +
+          `🔮 **#insider-intel** - Secret strats & early info\n` +
+          `🎙️ **#vip-voice** - Private voice chat\n\n` +
+          `**Bot Perks:**\n` +
+          `• Bots remember you better\n` +
+          `• Friendlier responses\n` +
+          `• Priority in queues\n` +
+          `• Early access to new features`
+        )
+        .setColor(0x00FF00);
+      
+      const dmEmbed3 = new EmbedBuilder()
+        .setTitle('⚠️ IMPORTANT')
+        .setDescription(
+          `**This access is CONFIDENTIAL.**\n\n` +
+          `• Don't screenshot or share content\n` +
+          `• Don't share your account\n` +
+          `• Don't leak insider info\n\n` +
+          `Read the full terms in **#confidential-agreement**.\n\n` +
+          `Violations = instant removal, no refund, blacklist.\n\n` +
+          `───────────────────────────\n\n` +
+          `Questions? Ask in #vip-lounge.\n\n` +
+          `*Welcome to the inside. Don't fuck it up.*\n\n` +
+          `— The Unpatched Method`
+        )
+        .setColor(0xFF0000)
+        .setFooter({ text: 'This message is confidential' })
+        .setTimestamp();
+      
+      try {
+        await n.user.send({ embeds: [dmEmbed1, dmEmbed2, dmEmbed3] });
+      } catch (e) {
+        // Can't DM user, post in lounge instead
+        const loungeChannel = n.guild.channels.cache.find(c => c.name === '💎・vip-lounge');
+        if (loungeChannel) {
+          await loungeChannel.send({ 
+            content: `${n} **Welcome to the Inner Circle!** Check out <#${n.guild.channels.cache.find(c => c.name === '📜・confidential-agreement')?.id}> first.`,
+            embeds: [dmEmbed2] 
+          });
+        }
+      }
+      
+      // Log to staff if there's a log channel
+      const logChannel = n.guild.channels.cache.find(c => c.name.includes('premium-log') || c.name.includes('subscriber-log'));
+      if (logChannel) {
+        const logEmbed = new EmbedBuilder()
+          .setTitle('💰 New Inner Circle Member')
+          .setDescription(`**User:** ${n.user.tag} (${n.user.id})\n**Joined:** <t:${Math.floor(Date.now() / 1000)}:F>`)
+          .setColor(0x00FF00)
+          .setThumbnail(n.user.displayAvatarURL({ dynamic: true }))
+          .setTimestamp();
+        await logChannel.send({ embeds: [logEmbed] });
+      }
+    }
+    
+    // Role was removed
+    if (hadRole && !hasRole) {
+      console.log(`[PREMIUM] ${n.user.tag} left Inner Circle`);
+      
+      // Log removal
+      const logChannel = n.guild.channels.cache.find(c => c.name.includes('premium-log') || c.name.includes('subscriber-log'));
+      if (logChannel) {
+        const logEmbed = new EmbedBuilder()
+          .setTitle('📤 Inner Circle Member Left')
+          .setDescription(`**User:** ${n.user.tag} (${n.user.id})\n**Left:** <t:${Math.floor(Date.now() / 1000)}:F>`)
+          .setColor(0xFF0000)
+          .setThumbnail(n.user.displayAvatarURL({ dynamic: true }))
+          .setTimestamp();
+        await logChannel.send({ embeds: [logEmbed] });
+      }
+    }
+  } catch (e) {
+    console.error('[PREMIUM] Role detection error:', e.message);
+  }
+});
 client.on(Events.VoiceStateUpdate, async (o, n) => { 
   if (intelligence?.contextAwareness && n.guild) intelligence.contextAwareness.updateVoiceState(n.guild.id, n);
   try { await loggingHandler.voiceStateUpdate(o, n, client); } catch (e) {}
@@ -789,7 +1043,7 @@ client.on(Events.VoiceStateUpdate, async (o, n) => {
 client.on(Events.MessageReactionAdd, async (r, u) => { if (u.bot) return; if (intelligence && r.message.author?.id === client.user.id) await intelligence.handleReaction(r.message.id, r.emoji.name, u.id); });
 
 // ═══════════════════════════════════════════════════════════════
-// STATS CATEGORY SETUP
+// STATS CATEGORY SETUP (with subscriber count)
 // ═══════════════════════════════════════════════════════════════
 async function handleSetupStats(message) {
   if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
@@ -829,6 +1083,10 @@ async function handleSetupStats(message) {
     }
     const botCount = guild.members.cache.filter(m => m.user.bot).size;
     
+    // Count Inner Circle members
+    const innerCircleRole = guild.roles.cache.find(r => r.name === '⭐ Inner Circle');
+    const subCount = innerCircleRole ? innerCircleRole.members.size : 0;
+    
     // Create voice channels (locked so no one can join)
     const channelOptions = {
       type: 2, // Voice
@@ -844,8 +1102,9 @@ async function handleSetupStats(message) {
     await guild.channels.create({ name: `👥 Members: ${memberCount}`, ...channelOptions });
     await guild.channels.create({ name: `🟢 Online: ${onlineCount}`, ...channelOptions });
     await guild.channels.create({ name: `🤖 Bots: ${botCount}`, ...channelOptions });
+    await guild.channels.create({ name: `⭐ Subscribers: ${subCount}`, ...channelOptions });
     
-    await message.reply(`✅ **Stats category created!**\n\n📊 SERVER STATS\n├ 👥 Members: ${memberCount}\n├ 🟢 Online: ${onlineCount}\n└ 🤖 Bots: ${botCount}\n\n*Updates every 5 minutes automatically.*`);
+    await message.reply(`✅ **Stats category created!**\n\n📊 SERVER STATS\n├ 👥 Members: ${memberCount}\n├ 🟢 Online: ${onlineCount}\n├ 🤖 Bots: ${botCount}\n└ ⭐ Subscribers: ${subCount}\n\n*Updates every 5 minutes automatically.*`);
     
   } catch (e) {
     console.error('Setup stats error:', e);
@@ -878,6 +1137,922 @@ async function handleDeleteStats(message) {
     await message.reply(`❌ Error: ${e.message}`);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// PREMIUM SETUP - Unique Subscriber System
+// ═══════════════════════════════════════════════════════════════
+async function handleSetupPremium(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('❌ Admin only.');
+  }
+  
+  try {
+    const guild = message.guild;
+    
+    await message.reply('🔧 *accessing premium protocols...* Setting up the VIP system...');
+    
+    // Delete old premium stuff if exists
+    const oldCategory = guild.channels.cache.find(c => c.name === '⭐ INNER CIRCLE' && c.type === 4);
+    if (oldCategory) {
+      for (const channel of oldCategory.children.cache.values()) {
+        await channel.delete().catch(() => {});
+      }
+      await oldCategory.delete().catch(() => {});
+    }
+    
+    const oldRole = guild.roles.cache.find(r => r.name === '⭐ Inner Circle');
+    if (oldRole) await oldRole.delete().catch(() => {});
+    
+    // Create the premium role with unique gradient-like color
+    // Using a deep gold/amber color: #FFB300
+    const premiumRole = await guild.roles.create({
+      name: '⭐ Inner Circle',
+      color: 0xFFB300, // Deep gold/amber
+      hoist: true, // Shows separately in member list
+      mentionable: true,
+      reason: 'Premium subscriber role'
+    });
+    
+    // Move role high in hierarchy (below admin roles)
+    const botRole = guild.members.me.roles.highest;
+    await premiumRole.setPosition(botRole.position - 1).catch(() => {});
+    
+    // Create premium category
+    const category = await guild.channels.create({
+      name: '⭐ INNER CIRCLE',
+      type: 4, // Category
+      permissionOverwrites: [
+        {
+          id: guild.id, // @everyone
+          deny: [PermissionFlagsBits.ViewChannel]
+        },
+        {
+          id: premiumRole.id,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.Connect, PermissionFlagsBits.Speak]
+        }
+      ]
+    });
+    
+    // Create RULES channel first (read-only)
+    const rulesChannel = await guild.channels.create({
+      name: '📜・confidential-agreement',
+      type: 0, // Text
+      parent: category.id,
+      topic: '⚠️ READ THIS FIRST. Confidentiality agreement and rules.',
+      permissionOverwrites: [
+        { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: premiumRole.id, allow: [PermissionFlagsBits.ViewChannel], deny: [PermissionFlagsBits.SendMessages] }
+      ]
+    });
+    
+    // Post confidentiality agreement
+    const confidentialEmbed1 = new EmbedBuilder()
+      .setTitle('🔒 CONFIDENTIALITY AGREEMENT')
+      .setDescription(`**Welcome to the Inner Circle.**\n\nBy accessing this section, you agree to the following terms. Violation results in **immediate removal** and potential **blacklist** from all Unpatched Method services.`)
+      .setColor(0xFF0000)
+      .setTimestamp();
+    
+    const confidentialEmbed2 = new EmbedBuilder()
+      .setTitle('📋 TERMS OF ACCESS')
+      .setDescription(
+        `**1. NON-DISCLOSURE**\n` +
+        `Everything in Inner Circle channels is **CONFIDENTIAL**. This includes:\n` +
+        `• Strategies, glitches, and methods shared\n` +
+        `• Insider intel and early updates\n` +
+        `• Conversations and member identities\n` +
+        `• Screenshots, recordings, or any reproduction\n\n` +
+        `**2. NO SHARING**\n` +
+        `• Do NOT screenshot or screen record\n` +
+        `• Do NOT copy/paste content elsewhere\n` +
+        `• Do NOT share your account access\n` +
+        `• Do NOT invite others to "look around"\n\n` +
+        `**3. NO RESELLING**\n` +
+        `• Information here is for YOUR use only\n` +
+        `• Reselling or redistributing = permanent ban\n` +
+        `• We track leaks. We will find out.\n\n` +
+        `**4. ACCOUNT SECURITY**\n` +
+        `• YOU are responsible for your account\n` +
+        `• Shared account = both users banned\n` +
+        `• Compromised account = notify staff immediately`
+      )
+      .setColor(0xFF6600);
+    
+    const confidentialEmbed3 = new EmbedBuilder()
+      .setTitle('⚠️ ENFORCEMENT')
+      .setDescription(
+        `**What happens if you break these rules:**\n\n` +
+        `🔴 **First Offense:** Immediate removal, no refund\n` +
+        `🔴 **Leak Detection:** Permanent blacklist + public shame\n` +
+        `🔴 **Account Sharing:** Both accounts banned\n` +
+        `🔴 **Chargeback Attempt:** Blacklisted from all future access\n\n` +
+        `We have systems in place to detect leaks. Watermarked content, activity tracking, and more. Don't test us.\n\n` +
+        `───────────────────────────\n\n` +
+        `✅ **By staying in this server with the Inner Circle role, you acknowledge and agree to ALL terms above.**\n\n` +
+        `*If you disagree, cancel your subscription now. No hard feelings.*`
+      )
+      .setColor(0xFF0000)
+      .setFooter({ text: 'Inner Circle • Confidential • The Unpatched Method' });
+    
+    await rulesChannel.send({ embeds: [confidentialEmbed1] });
+    await rulesChannel.send({ embeds: [confidentialEmbed2] });
+    await rulesChannel.send({ embeds: [confidentialEmbed3] });
+    
+    // Create premium channels
+    const loungeChannel = await guild.channels.create({
+      name: '💎・vip-lounge',
+      type: 0, // Text
+      parent: category.id,
+      topic: '🌟 Welcome to the Inner Circle. Exclusive access for our supporters.',
+      permissionOverwrites: [
+        { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: premiumRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }
+      ]
+    });
+    
+    await guild.channels.create({
+      name: '🎯・priority-lfg',
+      type: 0, // Text
+      parent: category.id,
+      topic: '⚡ Priority matchmaking for Inner Circle members. Skip the queue.',
+      permissionOverwrites: [
+        { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: premiumRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }
+      ]
+    });
+    
+    await guild.channels.create({
+      name: '🔮・insider-intel',
+      type: 0, // Text
+      parent: category.id,
+      topic: '🤫 Early updates, secret strats, and insider information.',
+      permissionOverwrites: [
+        { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: premiumRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }
+      ]
+    });
+    
+    await guild.channels.create({
+      name: '🎙️・vip-voice',
+      type: 2, // Voice
+      parent: category.id,
+      userLimit: 10,
+      permissionOverwrites: [
+        { id: guild.id, deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect] },
+        { id: premiumRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect, PermissionFlagsBits.Speak, PermissionFlagsBits.Stream] }
+      ]
+    });
+    
+    // Send welcome message in lounge
+    const welcomeEmbed = new EmbedBuilder()
+      .setTitle('⭐ WELCOME TO THE INNER CIRCLE')
+      .setDescription(`*The elite of The Unpatched Method.*\n\n` +
+        `You've joined something special. This isn't just a subscription—it's access to the inner workings.\n\n` +
+        `**What you get:**\n` +
+        `💎 **VIP Lounge** - Chill with fellow supporters\n` +
+        `🎯 **Priority LFG** - Skip the queue, find crews faster\n` +
+        `🔮 **Insider Intel** - Early updates, secret strats\n` +
+        `🎙️ **VIP Voice** - Private voice chat\n` +
+        `⚡ **Priority Support** - We see your messages first\n\n` +
+        `*The bots remember their supporters. They treat you different.*`)
+      .setColor(0xFFB300)
+      .setFooter({ text: 'Inner Circle • The Unpatched Method' })
+      .setTimestamp();
+    
+    await loungeChannel.send({ embeds: [welcomeEmbed] });
+    
+    // Final response
+    const successEmbed = new EmbedBuilder()
+      .setTitle('✅ Premium System Activated')
+      .setDescription(`*adjusts glasses* The Inner Circle is ready.\n\n` +
+        `**Created:**\n` +
+        `⭐ Role: **Inner Circle** (${premiumRole})\n` +
+        `📁 Category: **INNER CIRCLE**\n` +
+        `💎 Channel: **#vip-lounge**\n` +
+        `🎯 Channel: **#priority-lfg**\n` +
+        `🔮 Channel: **#insider-intel**\n` +
+        `🎙️ Voice: **#vip-voice**\n\n` +
+        `**Next steps:**\n` +
+        `1. Go to Server Settings → Server Products\n` +
+        `2. Create a product that grants the **Inner Circle** role\n` +
+        `3. Set your price\n` +
+        `4. Members who buy get auto-assigned the role\n\n` +
+        `*Now go make some money.*`)
+      .setColor(0x00FF00)
+      .setTimestamp();
+    
+    await message.reply({ embeds: [successEmbed] });
+    
+  } catch (e) {
+    console.error('Premium setup error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
+
+async function handleDeletePremium(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('❌ Admin only.');
+  }
+  
+  try {
+    const guild = message.guild;
+    
+    // Delete category and channels
+    const category = guild.channels.cache.find(c => c.name === '⭐ INNER CIRCLE' && c.type === 4);
+    if (category) {
+      for (const channel of category.children.cache.values()) {
+        await channel.delete().catch(() => {});
+      }
+      await category.delete().catch(() => {});
+    }
+    
+    // Delete role
+    const role = guild.roles.cache.find(r => r.name === '⭐ Inner Circle');
+    if (role) await role.delete().catch(() => {});
+    
+    await message.reply('✅ Premium system deleted. *Back to the basics.*');
+    
+  } catch (e) {
+    console.error('Delete premium error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TERMS OF SERVICE SETUP
+// ═══════════════════════════════════════════════════════════════
+async function handleSetupTOS(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('❌ Admin only.');
+  }
+  
+  try {
+    const guild = message.guild;
+    
+    // Find or create rules/info category
+    let infoCategory = guild.channels.cache.find(c => c.name.toLowerCase().includes('info') && c.type === 4);
+    if (!infoCategory) {
+      infoCategory = guild.channels.cache.find(c => c.name.toLowerCase().includes('rules') && c.type === 4);
+    }
+    
+    // Create TOS channel
+    const tosChannel = await guild.channels.create({
+      name: '📜・terms-of-service',
+      type: 0,
+      parent: infoCategory?.id || null,
+      topic: 'Terms of Service and Legal Information',
+      permissionOverwrites: [
+        { id: guild.id, allow: [PermissionFlagsBits.ViewChannel], deny: [PermissionFlagsBits.SendMessages] }
+      ]
+    });
+    
+    // Post TOS embeds
+    const tosEmbed1 = new EmbedBuilder()
+      .setTitle('📜 TERMS OF SERVICE')
+      .setDescription(
+        `**THE UNPATCHED METHOD**\n` +
+        `*Last Updated: ${new Date().toLocaleDateString()}*\n\n` +
+        `By using this Discord server and its services, you agree to these terms. If you disagree, leave immediately.`
+      )
+      .setColor(0x2F3136);
+    
+    const tosEmbed2 = new EmbedBuilder()
+      .setTitle('1. SERVICE DESCRIPTION')
+      .setDescription(
+        `**What We Provide:**\n` +
+        `• Discord community for GTA Online & Red Dead Online\n` +
+        `• AI-powered bot assistants\n` +
+        `• Looking-for-group (LFG) matchmaking\n` +
+        `• Premium subscription services (Inner Circle)\n` +
+        `• Gaming strategies, tips, and information\n\n` +
+        `**What We Don't Provide:**\n` +
+        `• Guarantees of game account safety\n` +
+        `• Official Rockstar Games support\n` +
+        `• Refunds for digital purchases\n` +
+        `• Legal advice or representation`
+      )
+      .setColor(0x2F3136);
+    
+    const tosEmbed3 = new EmbedBuilder()
+      .setTitle('2. USER CONDUCT')
+      .setDescription(
+        `**You Agree To:**\n` +
+        `• Follow Discord's Terms of Service\n` +
+        `• Respect other members\n` +
+        `• Not share premium content outside designated areas\n` +
+        `• Not attempt to exploit, hack, or abuse our bots\n` +
+        `• Not impersonate staff or other members\n` +
+        `• Not spam, flood, or disrupt services\n` +
+        `• Keep illegal content out of our server\n\n` +
+        `**Violations Result In:**\n` +
+        `• Warning → Mute → Kick → Ban\n` +
+        `• Severe violations = immediate permanent ban\n` +
+        `• No appeals for chargebacks or payment fraud`
+      )
+      .setColor(0x2F3136);
+    
+    const tosEmbed4 = new EmbedBuilder()
+      .setTitle('3. PREMIUM SERVICES')
+      .setDescription(
+        `**Inner Circle Subscriptions:**\n` +
+        `• Payments processed by Discord/Stripe\n` +
+        `• Access granted instantly upon payment\n` +
+        `• **ALL SALES ARE FINAL - NO REFUNDS**\n` +
+        `• Subscription auto-renews unless cancelled\n` +
+        `• Cancellation removes access at period end\n\n` +
+        `**Chargebacks & Fraud:**\n` +
+        `• Chargeback attempts = permanent blacklist\n` +
+        `• Fraudulent purchases reported to Discord\n` +
+        `• We reserve right to pursue legal action\n\n` +
+        `**Account Sharing:**\n` +
+        `• Your subscription is for YOUR account only\n` +
+        `• Sharing access = termination, no refund\n` +
+        `• You are responsible for your account security`
+      )
+      .setColor(0xFF6600);
+    
+    const tosEmbed5 = new EmbedBuilder()
+      .setTitle('4. INTELLECTUAL PROPERTY')
+      .setDescription(
+        `**Our Content:**\n` +
+        `• Bot code, systems, and features are proprietary\n` +
+        `• Server structure and setup are copyrighted\n` +
+        `• Premium content is confidential\n` +
+        `• Unauthorized reproduction is prohibited\n\n` +
+        `**You May Not:**\n` +
+        `• Copy, redistribute, or sell our bot code\n` +
+        `• Screenshot/record premium content for sharing\n` +
+        `• Reverse engineer our systems\n` +
+        `• Create derivative works without permission\n\n` +
+        `**DMCA:**\n` +
+        `We will pursue DMCA takedowns and legal action against IP theft.`
+      )
+      .setColor(0xFF0000);
+    
+    const tosEmbed6 = new EmbedBuilder()
+      .setTitle('5. DISCLAIMERS')
+      .setDescription(
+        `**As-Is Service:**\n` +
+        `• Services provided "AS IS" without warranty\n` +
+        `• We don't guarantee uptime or availability\n` +
+        `• Bot features may change without notice\n` +
+        `• We're not responsible for game bans\n\n` +
+        `**Limitation of Liability:**\n` +
+        `• Maximum liability = amount you paid us\n` +
+        `• We're not liable for indirect damages\n` +
+        `• Use glitches/exploits at your own risk\n\n` +
+        `**Third Parties:**\n` +
+        `• We're not affiliated with Rockstar Games\n` +
+        `• We're not responsible for third-party content\n` +
+        `• External links are used at your own risk`
+      )
+      .setColor(0x2F3136);
+    
+    const tosEmbed7 = new EmbedBuilder()
+      .setTitle('6. TERMINATION')
+      .setDescription(
+        `**We May Terminate Your Access If:**\n` +
+        `• You violate these terms\n` +
+        `• You engage in fraud or chargebacks\n` +
+        `• You harass staff or members\n` +
+        `• You damage our reputation\n` +
+        `• At our sole discretion\n\n` +
+        `**Upon Termination:**\n` +
+        `• No refund of subscription fees\n` +
+        `• All access revoked immediately\n` +
+        `• Blacklist from future services\n` +
+        `• Data may be retained for legal purposes`
+      )
+      .setColor(0xFF0000);
+    
+    const tosEmbed8 = new EmbedBuilder()
+      .setTitle('7. AGREEMENT')
+      .setDescription(
+        `**By Remaining In This Server:**\n\n` +
+        `✅ You confirm you are 13+ years old\n` +
+        `✅ You agree to all terms above\n` +
+        `✅ You accept our privacy practices\n` +
+        `✅ You understand purchases are final\n` +
+        `✅ You accept our right to modify terms\n\n` +
+        `───────────────────────────\n\n` +
+        `**Contact:** Server staff for questions\n` +
+        `**Disputes:** Handled via Discord support\n\n` +
+        `*These terms may be updated. Continued use = acceptance.*\n\n` +
+        `© ${new Date().getFullYear()} The Unpatched Method. All rights reserved.`
+      )
+      .setColor(0x00FF00)
+      .setFooter({ text: 'Terms of Service • The Unpatched Method' })
+      .setTimestamp();
+    
+    await tosChannel.send({ embeds: [tosEmbed1] });
+    await tosChannel.send({ embeds: [tosEmbed2] });
+    await tosChannel.send({ embeds: [tosEmbed3] });
+    await tosChannel.send({ embeds: [tosEmbed4] });
+    await tosChannel.send({ embeds: [tosEmbed5] });
+    await tosChannel.send({ embeds: [tosEmbed6] });
+    await tosChannel.send({ embeds: [tosEmbed7] });
+    await tosChannel.send({ embeds: [tosEmbed8] });
+    
+    await message.reply(`✅ **Terms of Service created!**\n\nChannel: ${tosChannel}\n\n*Professional TOS protects you legally.*`);
+    
+  } catch (e) {
+    console.error('TOS setup error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TESTIMONIAL SYSTEM
+// ═══════════════════════════════════════════════════════════════
+async function handleTestimonial(message, args) {
+  // Check if user is Inner Circle
+  const innerCircleRole = message.guild.roles.cache.find(r => r.name === '⭐ Inner Circle');
+  if (!innerCircleRole || !message.member.roles.cache.has(innerCircleRole.id)) {
+    return message.reply('❌ Only Inner Circle members can leave testimonials.');
+  }
+  
+  const review = args.join(' ');
+  if (!review || review.length < 10) {
+    return message.reply('❌ Usage: `?testimonial Your review here (at least 10 characters)`');
+  }
+  
+  if (review.length > 500) {
+    return message.reply('❌ Keep it under 500 characters.');
+  }
+  
+  // Find or create testimonials channel
+  let testimonialsChannel = message.guild.channels.cache.find(c => c.name === '⭐・testimonials');
+  
+  if (!testimonialsChannel) {
+    // Create it
+    testimonialsChannel = await message.guild.channels.create({
+      name: '⭐・testimonials',
+      type: 0,
+      topic: '💬 Reviews from Inner Circle members. Real people, real experiences.',
+      permissionOverwrites: [
+        { id: message.guild.id, allow: [PermissionFlagsBits.ViewChannel], deny: [PermissionFlagsBits.SendMessages] }
+      ]
+    });
+    
+    // Post header
+    const headerEmbed = new EmbedBuilder()
+      .setTitle('⭐ INNER CIRCLE TESTIMONIALS')
+      .setDescription(
+        `**Real reviews from real members.**\n\n` +
+        `These are testimonials from our Inner Circle subscribers. Unedited, unfiltered.\n\n` +
+        `*Want to leave a review? Subscribe to Inner Circle and use \`?testimonial\` in any channel.*`
+      )
+      .setColor(0xFFB300)
+      .setTimestamp();
+    
+    await testimonialsChannel.send({ embeds: [headerEmbed] });
+  }
+  
+  // Create testimonial embed
+  const stars = '⭐'.repeat(5); // 5 stars default
+  const testimonialEmbed = new EmbedBuilder()
+    .setAuthor({ 
+      name: message.author.username, 
+      iconURL: message.author.displayAvatarURL({ dynamic: true }) 
+    })
+    .setDescription(`"${review}"`)
+    .addFields(
+      { name: 'Rating', value: stars, inline: true },
+      { name: 'Member Since', value: `<t:${Math.floor(message.member.joinedTimestamp / 1000)}:R>`, inline: true }
+    )
+    .setColor(0xFFB300)
+    .setFooter({ text: 'Inner Circle Member' })
+    .setTimestamp();
+  
+  await testimonialsChannel.send({ embeds: [testimonialEmbed] });
+  await message.reply(`✅ **Testimonial posted!** Thanks for the review. Check it out in ${testimonialsChannel}`);
+  
+  // Delete original message to keep it clean
+  await message.delete().catch(() => {});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PREMIUM TIERS SETUP
+// ═══════════════════════════════════════════════════════════════
+async function handleSetupTiers(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('❌ Admin only.');
+  }
+  
+  try {
+    const guild = message.guild;
+    
+    await message.reply('🔧 *configuring premium tiers...* Setting up multiple subscription levels...');
+    
+    // Create three tiers
+    const tier1Role = await guild.roles.create({
+      name: '⭐ Inner Circle',
+      color: 0xFFB300, // Gold
+      hoist: true,
+      mentionable: true,
+      reason: 'Premium Tier 1'
+    }).catch(() => guild.roles.cache.find(r => r.name === '⭐ Inner Circle'));
+    
+    const tier2Role = await guild.roles.create({
+      name: '💎 Inner Circle+',
+      color: 0x00FFFF, // Cyan/Diamond
+      hoist: true,
+      mentionable: true,
+      reason: 'Premium Tier 2'
+    });
+    
+    const tier3Role = await guild.roles.create({
+      name: '👑 Lifetime VIP',
+      color: 0xFF00FF, // Purple/Royal
+      hoist: true,
+      mentionable: true,
+      reason: 'Premium Tier 3 - Lifetime'
+    });
+    
+    // Move roles high
+    const botRole = guild.members.me.roles.highest;
+    await tier3Role.setPosition(botRole.position - 1).catch(() => {});
+    await tier2Role.setPosition(botRole.position - 2).catch(() => {});
+    await tier1Role.setPosition(botRole.position - 3).catch(() => {});
+    
+    // Find or create premium info channel
+    let premiumInfoChannel = guild.channels.cache.find(c => c.name === '💰・premium-info');
+    if (!premiumInfoChannel) {
+      premiumInfoChannel = await guild.channels.create({
+        name: '💰・premium-info',
+        type: 0,
+        topic: 'Information about our premium tiers and benefits'
+      });
+    }
+    
+    // Clear old messages
+    const oldMessages = await premiumInfoChannel.messages.fetch({ limit: 50 });
+    await premiumInfoChannel.bulkDelete(oldMessages).catch(() => {});
+    
+    // Post tier info
+    const headerEmbed = new EmbedBuilder()
+      .setTitle('💎 PREMIUM MEMBERSHIPS')
+      .setDescription(
+        `**Support The Unpatched Method and get exclusive perks.**\n\n` +
+        `Choose the tier that fits you. All tiers support our community and development.`
+      )
+      .setColor(0xFFB300)
+      .setImage('https://i.imgur.com/your-banner-here.png'); // You can add a banner
+    
+    const tier1Embed = new EmbedBuilder()
+      .setTitle('⭐ INNER CIRCLE')
+      .setDescription(
+        `**$4.99/month**\n\n` +
+        `The standard premium experience.\n\n` +
+        `**Includes:**\n` +
+        `✅ Access to all premium channels\n` +
+        `✅ Priority LFG matchmaking\n` +
+        `✅ Insider intel & early updates\n` +
+        `✅ VIP voice chat\n` +
+        `✅ Bots remember you better\n` +
+        `✅ Subscriber role & badge\n` +
+        `✅ Support the community`
+      )
+      .setColor(0xFFB300)
+      .setFooter({ text: 'Monthly subscription • Cancel anytime' });
+    
+    const tier2Embed = new EmbedBuilder()
+      .setTitle('💎 INNER CIRCLE+')
+      .setDescription(
+        `**$9.99/month**\n\n` +
+        `Everything in Inner Circle, plus more.\n\n` +
+        `**Includes Everything Above, Plus:**\n` +
+        `✅ Direct message support from staff\n` +
+        `✅ Custom bot nickname recognition\n` +
+        `✅ Early access to new features\n` +
+        `✅ Vote on upcoming features\n` +
+        `✅ Exclusive giveaway entries\n` +
+        `✅ Diamond role & badge\n` +
+        `✅ Priority support queue`
+      )
+      .setColor(0x00FFFF)
+      .setFooter({ text: 'Monthly subscription • Best value' });
+    
+    const tier3Embed = new EmbedBuilder()
+      .setTitle('👑 LIFETIME VIP')
+      .setDescription(
+        `**$49.99 one-time**\n\n` +
+        `Pay once, VIP forever.\n\n` +
+        `**Includes Everything Above, Plus:**\n` +
+        `✅ LIFETIME access (never expires)\n` +
+        `✅ Name in credits/about section\n` +
+        `✅ Custom role color (request)\n` +
+        `✅ Direct line to owner\n` +
+        `✅ Beta test new bots/features\n` +
+        `✅ Crown role & badge\n` +
+        `✅ Our eternal gratitude 👑`
+      )
+      .setColor(0xFF00FF)
+      .setFooter({ text: 'One-time payment • Lifetime access' });
+    
+    const howToEmbed = new EmbedBuilder()
+      .setTitle('🛒 HOW TO SUBSCRIBE')
+      .setDescription(
+        `**Getting your premium access is easy:**\n\n` +
+        `1️⃣ Click **Server Settings** (server name → dropdown)\n` +
+        `2️⃣ Click **Server Subscriptions** or **Shop**\n` +
+        `3️⃣ Choose your tier\n` +
+        `4️⃣ Complete payment via Discord\n` +
+        `5️⃣ Access granted instantly!\n\n` +
+        `───────────────────────────\n\n` +
+        `**Payment Methods:**\n` +
+        `💳 Credit/Debit Card\n` +
+        `📱 PayPal\n` +
+        `🎮 Discord Nitro Credits\n\n` +
+        `**Questions?** Ask in general chat or DM staff.`
+      )
+      .setColor(0x00FF00);
+    
+    await premiumInfoChannel.send({ embeds: [headerEmbed] });
+    await premiumInfoChannel.send({ embeds: [tier1Embed] });
+    await premiumInfoChannel.send({ embeds: [tier2Embed] });
+    await premiumInfoChannel.send({ embeds: [tier3Embed] });
+    await premiumInfoChannel.send({ embeds: [howToEmbed] });
+    
+    const successEmbed = new EmbedBuilder()
+      .setTitle('✅ Premium Tiers Created')
+      .setDescription(
+        `**Roles Created:**\n` +
+        `⭐ Inner Circle - $4.99/mo\n` +
+        `💎 Inner Circle+ - $9.99/mo\n` +
+        `👑 Lifetime VIP - $49.99 once\n\n` +
+        `**Info Channel:** ${premiumInfoChannel}\n\n` +
+        `**Next Steps:**\n` +
+        `1. Go to Server Settings → Server Products\n` +
+        `2. Create 3 products (one per tier)\n` +
+        `3. Assign each role to its product\n` +
+        `4. Set the prices\n` +
+        `5. Publish!`
+      )
+      .setColor(0x00FF00)
+      .setTimestamp();
+    
+    await message.reply({ embeds: [successEmbed] });
+    
+  } catch (e) {
+    console.error('Tiers setup error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
+
+async function handleDeleteTiers(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('❌ Admin only.');
+  }
+  
+  try {
+    const guild = message.guild;
+    
+    // Delete tier roles (except base Inner Circle which deletepremium handles)
+    const tier2 = guild.roles.cache.find(r => r.name === '💎 Inner Circle+');
+    const tier3 = guild.roles.cache.find(r => r.name === '👑 Lifetime VIP');
+    
+    if (tier2) await tier2.delete().catch(() => {});
+    if (tier3) await tier3.delete().catch(() => {});
+    
+    // Delete premium info channel
+    const infoChannel = guild.channels.cache.find(c => c.name === '💰・premium-info');
+    if (infoChannel) await infoChannel.delete().catch(() => {});
+    
+    await message.reply('✅ Premium tiers deleted (kept base Inner Circle role).');
+    
+  } catch (e) {
+    console.error('Delete tiers error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BLACKLIST SYSTEM (for payment abusers)
+// ═══════════════════════════════════════════════════════════════
+async function handleBlacklist(message, args) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('❌ Admin only.');
+  }
+  
+  const userId = args[0]?.replace(/[<@!>]/g, '');
+  const reason = args.slice(1).join(' ') || 'No reason provided';
+  
+  if (!userId) {
+    return message.reply('❌ Usage: `?blacklist @user reason`');
+  }
+  
+  try {
+    // Store in database
+    await client.db.query(`
+      INSERT INTO blacklist (user_id, guild_id, reason, blacklisted_by, created_at)
+      VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (user_id, guild_id) DO UPDATE SET reason = $3, blacklisted_by = $4, created_at = NOW()
+    `, [userId, message.guild.id, reason, message.author.id]);
+    
+    // Create blacklist role if doesn't exist
+    let blacklistRole = message.guild.roles.cache.find(r => r.name === '🚫 Blacklisted');
+    if (!blacklistRole) {
+      blacklistRole = await message.guild.roles.create({
+        name: '🚫 Blacklisted',
+        color: 0x000000,
+        permissions: [],
+        reason: 'Blacklist role for payment abusers'
+      });
+    }
+    
+    // Apply role if member is in server
+    const member = await message.guild.members.fetch(userId).catch(() => null);
+    if (member) {
+      await member.roles.add(blacklistRole);
+      
+      // Remove any premium roles
+      const premiumRoles = ['⭐ Inner Circle', '💎 Inner Circle+', '👑 Lifetime VIP'];
+      for (const roleName of premiumRoles) {
+        const role = message.guild.roles.cache.find(r => r.name === roleName);
+        if (role && member.roles.cache.has(role.id)) {
+          await member.roles.remove(role);
+        }
+      }
+      
+      // DM them
+      try {
+        await member.send({
+          embeds: [new EmbedBuilder()
+            .setTitle('🚫 You Have Been Blacklisted')
+            .setDescription(
+              `You have been blacklisted from The Unpatched Method.\n\n` +
+              `**Reason:** ${reason}\n\n` +
+              `This means:\n` +
+              `• You cannot purchase premium services\n` +
+              `• Any existing access has been revoked\n` +
+              `• This is permanent\n\n` +
+              `If you believe this is an error, contact server staff.`
+            )
+            .setColor(0xFF0000)
+            .setTimestamp()
+          ]
+        });
+      } catch (e) {}
+    }
+    
+    // Log it
+    const logChannel = message.guild.channels.cache.find(c => 
+      c.name.includes('premium-log') || c.name.includes('blacklist-log') || c.name.includes('mod-log')
+    );
+    
+    if (logChannel) {
+      const logEmbed = new EmbedBuilder()
+        .setTitle('🚫 User Blacklisted')
+        .setDescription(
+          `**User:** <@${userId}> (${userId})\n` +
+          `**Reason:** ${reason}\n` +
+          `**By:** ${message.author}\n` +
+          `**Time:** <t:${Math.floor(Date.now() / 1000)}:F>`
+        )
+        .setColor(0xFF0000)
+        .setTimestamp();
+      
+      await logChannel.send({ embeds: [logEmbed] });
+    }
+    
+    await message.reply(`✅ **User blacklisted.**\n\nUser: <@${userId}>\nReason: ${reason}\n\n*They cannot purchase premium services.*`);
+    
+  } catch (e) {
+    console.error('Blacklist error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
+
+async function handleUnblacklist(message, args) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('❌ Admin only.');
+  }
+  
+  const userId = args[0]?.replace(/[<@!>]/g, '');
+  
+  if (!userId) {
+    return message.reply('❌ Usage: `?unblacklist @user`');
+  }
+  
+  try {
+    // Remove from database
+    await client.db.query(`
+      DELETE FROM blacklist WHERE user_id = $1 AND guild_id = $2
+    `, [userId, message.guild.id]);
+    
+    // Remove role if member is in server
+    const member = await message.guild.members.fetch(userId).catch(() => null);
+    if (member) {
+      const blacklistRole = message.guild.roles.cache.find(r => r.name === '🚫 Blacklisted');
+      if (blacklistRole && member.roles.cache.has(blacklistRole.id)) {
+        await member.roles.remove(blacklistRole);
+      }
+    }
+    
+    await message.reply(`✅ <@${userId}> has been removed from the blacklist.`);
+    
+  } catch (e) {
+    console.error('Unblacklist error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
+
+async function handleBlacklistCheck(message, args) {
+  const userId = args[0]?.replace(/[<@!>]/g, '') || message.author.id;
+  
+  try {
+    const result = await client.db.query(`
+      SELECT * FROM blacklist WHERE user_id = $1 AND guild_id = $2
+    `, [userId, message.guild.id]);
+    
+    if (result.rows.length > 0) {
+      const entry = result.rows[0];
+      const embed = new EmbedBuilder()
+        .setTitle('🚫 Blacklist Entry Found')
+        .setDescription(
+          `**User:** <@${userId}>\n` +
+          `**Reason:** ${entry.reason}\n` +
+          `**Blacklisted:** <t:${Math.floor(new Date(entry.created_at).getTime() / 1000)}:R>\n` +
+          `**By:** <@${entry.blacklisted_by}>`
+        )
+        .setColor(0xFF0000);
+      
+      await message.reply({ embeds: [embed] });
+    } else {
+      await message.reply(`✅ <@${userId}> is NOT blacklisted.`);
+    }
+    
+  } catch (e) {
+    console.error('Blacklist check error:', e);
+    await message.reply(`❌ Error: ${e.message}`);
+  }
+}
+
+// Prevent blacklisted users from getting premium roles
+client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
+  try {
+    // Check if they gained a premium role
+    const premiumRoleNames = ['⭐ Inner Circle', '💎 Inner Circle+', '👑 Lifetime VIP'];
+    
+    for (const roleName of premiumRoleNames) {
+      const role = newMember.guild.roles.cache.find(r => r.name === roleName);
+      if (!role) continue;
+      
+      const hadRole = oldMember.roles.cache.has(role.id);
+      const hasRole = newMember.roles.cache.has(role.id);
+      
+      if (!hadRole && hasRole) {
+        // They just got a premium role - check blacklist
+        const result = await client.db.query(`
+          SELECT * FROM blacklist WHERE user_id = $1 AND guild_id = $2
+        `, [newMember.id, newMember.guild.id]);
+        
+        if (result.rows.length > 0) {
+          // They're blacklisted! Remove the role immediately
+          await newMember.roles.remove(role);
+          
+          // DM them
+          try {
+            await newMember.send({
+              embeds: [new EmbedBuilder()
+                .setTitle('🚫 Access Denied')
+                .setDescription(
+                  `Your purchase was blocked because you are blacklisted.\n\n` +
+                  `**Reason:** ${result.rows[0].reason}\n\n` +
+                  `Your payment will be refunded by Discord. You cannot access premium services.`
+                )
+                .setColor(0xFF0000)
+              ]
+            });
+          } catch (e) {}
+          
+          // Log it
+          const logChannel = newMember.guild.channels.cache.find(c => 
+            c.name.includes('premium-log') || c.name.includes('blacklist-log')
+          );
+          
+          if (logChannel) {
+            await logChannel.send({
+              embeds: [new EmbedBuilder()
+                .setTitle('🚫 Blacklisted User Attempted Purchase')
+                .setDescription(
+                  `**User:** ${newMember.user.tag} (${newMember.id})\n` +
+                  `**Attempted Role:** ${roleName}\n` +
+                  `**Action:** Role removed automatically\n` +
+                  `**Blacklist Reason:** ${result.rows[0].reason}`
+                )
+                .setColor(0xFF0000)
+                .setTimestamp()
+              ]
+            });
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Blacklist role check error:', e.message);
+  }
+});
 
 client.on('error', console.error);
 process.on('unhandledRejection', console.error);
