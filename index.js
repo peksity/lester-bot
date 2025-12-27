@@ -63,6 +63,25 @@ try { botCommandsGuide = require('./shared/botCommandsGuide'); } catch (e) { con
 let hiveMind = null;
 try { hiveMind = require('./shared/hiveMind'); } catch (e) { console.log('[LESTER] HiveMind not found, using basic responses'); }
 
+// NEW ADVANCED SYSTEMS
+let ImageRecognition = null, BotImageHandlers = null;
+try { const ir = require('./shared/imageRecognition'); ImageRecognition = ir.ImageRecognition; BotImageHandlers = ir.BotImageHandlers; } catch (e) { console.log('[LESTER] ImageRecognition not found'); }
+
+let EconomySystem = null;
+try { EconomySystem = require('./shared/economySystem').EconomySystem; } catch (e) { console.log('[LESTER] EconomySystem not found'); }
+
+let KlingAI = null, KlingCommands = null;
+try { const k = require('./shared/klingAI'); KlingAI = k.KlingAI; KlingCommands = k.KlingCommands; } catch (e) { console.log('[LESTER] KlingAI not found'); }
+
+let HeistPlanner = null;
+try { HeistPlanner = require('./shared/heistPlanner').HeistPlanner; } catch (e) { console.log('[LESTER] HeistPlanner not found'); }
+
+let ReputationSystem = null;
+try { ReputationSystem = require('./shared/reputationSystem').ReputationSystem; } catch (e) { console.log('[LESTER] ReputationSystem not found'); }
+
+let PredictiveAnalytics = null;
+try { PredictiveAnalytics = require('./shared/predictiveAnalytics').PredictiveAnalytics; } catch (e) { console.log('[LESTER] PredictiveAnalytics not found'); }
+
 const MY_BOT_ID = 'lester';
 const BOT_NAME = 'Lester';
 const PREFIX = '?';
@@ -109,6 +128,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process
 client.db = pool; client.anthropic = anthropic;
 
 let intelligence = null, masterBrain = null, nexusCore = null, freeRoam = null, sentientBrain = null, apexBrain = null, voiceSystem = null, voiceChatHandler = null;
+let imageRecognition = null, economy = null, klingAI = null, klingCommands = null, heistPlanner = null, reputation = null, predictive = null;
 const conversationMemory = new Map();
 const activeConversations = new Map();
 
@@ -258,6 +278,53 @@ client.once(Events.ClientReady, async () => {
       progressionSystem.initialize(client);
       console.log('⏰ Progression System: ONLINE');
     } catch (e) { console.error('ProgressionSystem:', e.message); }
+  }
+  
+  // NEW ADVANCED SYSTEMS
+  if (ImageRecognition) {
+    try {
+      imageRecognition = new ImageRecognition(anthropic);
+      console.log('🔍 Image Recognition: ONLINE');
+    } catch (e) { console.error('ImageRecognition:', e.message); }
+  }
+  
+  if (EconomySystem) {
+    try {
+      economy = new EconomySystem(pool);
+      await economy.initialize();
+      console.log('💰 Economy System: ONLINE');
+    } catch (e) { console.error('EconomySystem:', e.message); }
+  }
+  
+  if (KlingAI && process.env.KLING_ACCESS_KEY) {
+    try {
+      klingAI = new KlingAI(process.env.KLING_ACCESS_KEY, process.env.KLING_SECRET_KEY);
+      klingCommands = new KlingCommands(klingAI);
+      console.log('🎨 Kling AI: ONLINE');
+    } catch (e) { console.error('KlingAI:', e.message); }
+  }
+  
+  if (HeistPlanner) {
+    try {
+      heistPlanner = new HeistPlanner(anthropic);
+      console.log('📋 Heist Planner: ONLINE');
+    } catch (e) { console.error('HeistPlanner:', e.message); }
+  }
+  
+  if (ReputationSystem) {
+    try {
+      reputation = new ReputationSystem(pool);
+      await reputation.initialize();
+      console.log('📊 Reputation System: ONLINE');
+    } catch (e) { console.error('ReputationSystem:', e.message); }
+  }
+  
+  if (PredictiveAnalytics) {
+    try {
+      predictive = new PredictiveAnalytics(pool);
+      await predictive.initialize();
+      console.log('🔮 Predictive Analytics: ONLINE');
+    } catch (e) { console.error('PredictiveAnalytics:', e.message); }
   }
 
   client.user.setPresence({ activities: [{ name: 'Watching everything | ?help', type: 3 }], status: 'online' });
@@ -609,7 +676,47 @@ client.on(Events.MessageCreate, async (message) => {
       // BLACKLIST (for payment abusers)
       'blacklist': () => handleBlacklist(message, args),
       'unblacklist': () => handleUnblacklist(message, args),
-      'blacklistcheck': () => handleBlacklistCheck(message, args)
+      'blacklistcheck': () => handleBlacklistCheck(message, args),
+      
+      // ECONOMY SYSTEM
+      'balance': () => handleBalance(message),
+      'bal': () => handleBalance(message),
+      'wallet': () => handleBalance(message),
+      'daily': () => handleDaily(message),
+      'work': () => handleWork(message),
+      'crime': () => handleCrime(message),
+      'slots': () => handleSlots(message, args),
+      'slot': () => handleSlots(message, args),
+      'coinflip': () => handleCoinflip(message, args),
+      'cf': () => handleCoinflip(message, args),
+      'blackjack': () => handleBlackjack(message, args),
+      'bj': () => handleBlackjack(message, args),
+      'roulette': () => handleRoulette(message, args),
+      'pay': () => handlePay(message, args),
+      'give': () => handlePay(message, args),
+      'richest': () => handleRichest(message),
+      'rich': () => handleRichest(message),
+      
+      // KLING AI
+      'generate': () => klingCommands?.handleGenerate(message, args) || message.reply('AI generation not available.'),
+      'wanted': () => klingCommands?.handleWanted(message, args) || message.reply('AI generation not available.'),
+      'bounty': () => klingCommands?.handleBounty(message, args) || message.reply('AI generation not available.'),
+      'victory': () => klingCommands?.handleVictory(message, args) || message.reply('AI generation not available.'),
+      'video': () => klingCommands?.handleVideo(message, args) || message.reply('AI generation not available.'),
+      
+      // HEIST PLANNER
+      'plan': () => handlePlan(message, args),
+      'grind': () => handlePlan(message, args),
+      
+      // REPUTATION
+      'reputation': () => handleReputation(message, args),
+      'rate': () => handleRate(message, args),
+      'partners': () => handlePartners(message),
+      'connection': () => handleConnection(message, args),
+      
+      // PREDICTIVE
+      'mytime': () => handleMyTime(message),
+      'peaktimes': () => handlePeakTimes(message)
     };
     
     if (commands[cmd]) { 
@@ -630,20 +737,22 @@ async function sendHelp(message) {
     .setDescription("*adjusts glasses* Fine, here's what I can do...")
     .addFields(
       { name: '⚙️ Admin', value: '`?setup` `?reset` `?nuke`' },
-      { name: '⭐ Premium', value: '`?setuppremium` `?deletepremium`' },
-      { name: '📊 Stats', value: '`?setupstats` `?deletestats`' },
+      { name: '⭐ Premium Setup', value: '`?setuppremium` `?setuptiers` `?setuptos` `?setupstats`' },
       { name: '🔨 Moderation', value: '`?kick` `?ban` `?unban` `?mute` `?unmute` `?timeout`\n`?warn` `?warnings` `?clearwarnings` `?purge` `?slowmode`\n`?lock` `?unlock`' },
-      { name: '🔍 Investigation', value: '`?investigate` `?evidence` `?record` `?watchlist` `?predict`' },
-      { name: '🛡️ Scam', value: '`?addscam` `?removescam` `?scamlist` `?checklink`' },
+      { name: '🔍 Investigation', value: '`?investigate` `?evidence` `?record` `?watchlist`' },
+      { name: '💰 Economy', value: '`?balance` `?daily` `?work` `?crime`\n`?slots` `?coinflip` `?blackjack` `?roulette`\n`?pay` `?richest`' },
+      { name: '🎨 AI Generation', value: '`?generate [prompt]` `?wanted @user`\n`?bounty @user` `?victory` `?video [prompt]`' },
+      { name: '📋 Heist Planner', value: '`?plan [minutes] [players]` - Optimal grinding route' },
+      { name: '📊 Reputation', value: '`?rep @user` `?rate @user [1-5]`\n`?partners` `?connection @user`' },
+      { name: '🔮 Predictions', value: '`?mytime` `?peaktimes`' },
       { name: '📊 Info', value: '`?serverinfo` `?userinfo` `?avatar` `?stats` `?leaderboard`' },
-      { name: '💰 Premium', value: '`?setuppremium` `?setuptiers` `?setuptos`\n`?testimonial` `?blacklist` `?unblacklist`' },
+      { name: '🚫 Blacklist', value: '`?blacklist` `?unblacklist` `?blacklistcheck`' },
       { name: '🔫 Gun Van', value: '`?gunvan`' },
-      { name: '🔢 Counting', value: '`?countrecord` `?fixcounting`' },
       { name: '🧠 Memory', value: '`?memory` `?forgetme`' },
       { name: '🎙️ Voice', value: '`?voice join/leave` `?speak` `?shutup`' }
     )
     .setColor(0x00FF00)
-    .setFooter({ text: 'ULTIMATE Edition + Premium Systems' });
+    .setFooter({ text: 'ULTIMATE Edition + All Systems' });
   await message.reply({ embeds: [embed] });
 }
 
@@ -2056,4 +2165,237 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
 
 client.on('error', console.error);
 process.on('unhandledRejection', console.error);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ECONOMY SYSTEM HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handleBalance(message) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const account = await economy.getAccount(message.author.id, message.guild.id);
+  const embed = economy.createBalanceEmbed(account, message.author);
+  await message.reply({ embeds: [embed] });
+}
+
+async function handleDaily(message) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const result = await economy.claimDaily(message.author.id, message.guild.id);
+  if (!result.success) return message.reply(result.message);
+  
+  const embed = new EmbedBuilder()
+    .setTitle('💰 Daily Reward!')
+    .setDescription(`You claimed **${economy.currency.symbol} ${result.reward.toLocaleString()}**!`)
+    .addFields(
+      { name: '🔥 Streak', value: `${result.streak} days`, inline: true },
+      { name: '➕ Streak Bonus', value: `${economy.currency.symbol} ${result.streakBonus}`, inline: true }
+    )
+    .setColor(0x00FF00)
+    .setFooter({ text: 'Come back tomorrow for more!' });
+  await message.reply({ embeds: [embed] });
+}
+
+async function handleWork(message) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const result = await economy.work(message.author.id, message.guild.id);
+  if (!result.success) return message.reply(result.message);
+  
+  await message.reply(`💼 You ${result.job} and earned **${economy.currency.symbol} ${result.earnings.toLocaleString()}**!`);
+}
+
+async function handleCrime(message) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const result = await economy.crime(message.author.id, message.guild.id);
+  if (!result.success) return message.reply(result.message);
+  
+  if (result.caught) {
+    await message.reply(`🚔 You tried to ${result.crime} but got caught! Paid **${economy.currency.symbol} ${result.fine}** in fines.`);
+  } else {
+    await message.reply(`🦹 You successfully ${result.crime} and scored **${economy.currency.symbol} ${result.earnings.toLocaleString()}**!`);
+  }
+}
+
+async function handleSlots(message, args) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const bet = parseInt(args[0]) || 100;
+  const result = await economy.playSlots(message.author.id, message.guild.id, bet);
+  if (!result.success) return message.reply(result.message);
+  
+  const embed = economy.createSlotsEmbed(result, message.author);
+  await message.reply({ embeds: [embed] });
+}
+
+async function handleCoinflip(message, args) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const bet = parseInt(args[0]) || 100;
+  const choice = args[1] || 'heads';
+  const result = await economy.coinflip(message.author.id, message.guild.id, bet, choice);
+  if (!result.success) return message.reply(result.message);
+  
+  const coinEmoji = result.result === 'heads' ? '🪙' : '⭕';
+  if (result.won) {
+    await message.reply(`${coinEmoji} **${result.result.toUpperCase()}!** You won **${economy.currency.symbol} ${result.profit.toLocaleString()}**!`);
+  } else {
+    await message.reply(`${coinEmoji} **${result.result.toUpperCase()}!** You lost **${economy.currency.symbol} ${result.loss.toLocaleString()}**`);
+  }
+}
+
+async function handleBlackjack(message, args) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const bet = parseInt(args[0]) || 100;
+  const result = await economy.blackjack(message.author.id, message.guild.id, bet);
+  if (!result.success) return message.reply(result.message);
+  
+  const embed = new EmbedBuilder()
+    .setTitle('🃏 Blackjack')
+    .addFields(
+      { name: 'Your Hand', value: `${result.playerHand.join(' ')} (${result.playerTotal})`, inline: true },
+      { name: 'Dealer Hand', value: `${result.dealerHand.join(' ')} (${result.dealerTotal})`, inline: true }
+    )
+    .setColor(result.won ? 0x00FF00 : result.push ? 0xFFFF00 : 0xFF0000)
+    .setFooter({ text: result.blackjack ? 'BLACKJACK!' : result.push ? 'Push - bet returned' : result.won ? 'You win!' : 'Dealer wins' });
+  
+  if (result.won || result.push) {
+    embed.addFields({ name: '💰 Payout', value: `${economy.currency.symbol} ${result.winnings.toLocaleString()}` });
+  }
+  await message.reply({ embeds: [embed] });
+}
+
+async function handleRoulette(message, args) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const bet = parseInt(args[0]) || 100;
+  const choice = args.slice(1).join(' ') || 'red';
+  const result = await economy.roulette(message.author.id, message.guild.id, bet, choice);
+  if (!result.success) return message.reply(result.message);
+  
+  const embed = new EmbedBuilder()
+    .setTitle('🎰 Roulette')
+    .setDescription(`The ball lands on... **${result.color} ${result.result}**!`)
+    .addFields(
+      { name: 'Your Bet', value: `${result.betType}`, inline: true },
+      { name: 'Result', value: result.won ? `🎉 WIN! ${result.multiplier}x` : '❌ Loss', inline: true }
+    )
+    .setColor(result.won ? 0x00FF00 : 0xFF0000);
+  
+  if (result.won) embed.addFields({ name: '💰 Winnings', value: `${economy.currency.symbol} ${result.winnings.toLocaleString()}` });
+  await message.reply({ embeds: [embed] });
+}
+
+async function handlePay(message, args) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const target = message.mentions.users.first();
+  if (!target) return message.reply('Mention someone to pay!');
+  const amount = parseInt(args[1]) || parseInt(args[0]?.replace(/[<@!>]/g, ''));
+  if (!amount || amount < 1) return message.reply('Enter a valid amount!');
+  
+  const result = await economy.transfer(message.author.id, target.id, message.guild.id, amount);
+  if (!result.success) return message.reply(result.message);
+  
+  await message.reply(`✅ Sent **${economy.currency.symbol} ${amount.toLocaleString()}** to ${target}!`);
+}
+
+async function handleRichest(message) {
+  if (!economy) return message.reply('Economy system not loaded.');
+  const leaderboard = await economy.getLeaderboard(message.guild.id, 'balance', 10);
+  const embed = economy.createLeaderboardEmbed(leaderboard, message.guild, 'balance');
+  await message.reply({ embeds: [embed] });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEIST PLANNER HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handlePlan(message, args) {
+  if (!heistPlanner) return message.reply('Heist planner not loaded.');
+  const time = parseInt(args[0]) || 60;
+  const players = parseInt(args[1]) || 1;
+  const game = args[2]?.toLowerCase() === 'rdo' ? 'rdo' : 'gta';
+  
+  const plan = await heistPlanner.generatePlan(time, players, game);
+  const embed = heistPlanner.createPlanEmbed(plan, time, game);
+  await message.reply({ embeds: [embed] });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REPUTATION HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handleReputation(message, args) {
+  if (!reputation) return message.reply('Reputation system not loaded.');
+  const target = message.mentions.users.first() || message.author;
+  const rep = await reputation.getReputation(target.id, message.guild.id);
+  const partners = await reputation.getFrequentPartners(target.id, message.guild.id, 5);
+  const embed = reputation.createReputationEmbed(rep, target, partners);
+  await message.reply({ embeds: [embed] });
+}
+
+async function handleRate(message, args) {
+  if (!reputation) return message.reply('Reputation system not loaded.');
+  const target = message.mentions.users.first();
+  if (!target) return message.reply('Mention someone to rate!');
+  const rating = parseInt(args[1]) || parseInt(args.find(a => !a.startsWith('<@')));
+  if (!rating || rating < 1 || rating > 5) return message.reply('Rate 1-5 stars! Example: `?rate @user 5`');
+  
+  const result = await reputation.ratePlayer(message.author.id, target.id, message.guild.id, rating);
+  if (!result.success) return message.reply(result.message);
+  
+  await message.reply(`⭐ Rated ${target} **${rating}/5** stars! Their new average: **${result.newAverage}/5**`);
+}
+
+async function handlePartners(message) {
+  if (!reputation) return message.reply('Reputation system not loaded.');
+  const partners = await reputation.getFrequentPartners(message.author.id, message.guild.id, 10);
+  
+  if (partners.length === 0) return message.reply("You haven't played with anyone yet!");
+  
+  const partnerList = partners.map((p, i) => 
+    `${i + 1}. <@${p.partner_id}> - **${p.sessions_together}** sessions | $${parseInt(p.total_earnings_together).toLocaleString()} earned together`
+  ).join('\n');
+  
+  const embed = new EmbedBuilder()
+    .setTitle('🤝 Your Frequent Partners')
+    .setDescription(partnerList)
+    .setColor(0x00BFFF);
+  await message.reply({ embeds: [embed] });
+}
+
+async function handleConnection(message, args) {
+  if (!reputation) return message.reply('Reputation system not loaded.');
+  const target = message.mentions.users.first();
+  if (!target) return message.reply('Mention someone to see your connection!');
+  
+  const connection = await reputation.getConnection(message.author.id, target.id, message.guild.id);
+  const embed = reputation.createConnectionEmbed(connection, message.author, target);
+  await message.reply({ embeds: [embed] });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PREDICTIVE ANALYTICS HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handleMyTime(message) {
+  if (!predictive) return message.reply('Predictive analytics not loaded.');
+  const prediction = await predictive.predictBestTime(message.author.id, message.guild.id);
+  const serverPeaks = await predictive.getServerPeakTimes(message.guild.id, 3);
+  const embed = predictive.createPredictionEmbed(prediction, message.author, serverPeaks);
+  await message.reply({ embeds: [embed] });
+}
+
+async function handlePeakTimes(message) {
+  if (!predictive) return message.reply('Predictive analytics not loaded.');
+  const peaks = await predictive.getServerPeakTimes(message.guild.id, 10);
+  
+  if (peaks.length === 0) return message.reply('Not enough data yet!');
+  
+  const peakList = peaks.map((p, i) => 
+    `${i + 1}. **${predictive.getDayName(p.day_of_week)}** at **${predictive.formatHour(p.hour_of_day)}** - ${p.total_lfg} sessions`
+  ).join('\n');
+  
+  const embed = new EmbedBuilder()
+    .setTitle('🌐 Server Peak Times')
+    .setDescription(peakList)
+    .setColor(0x9932CC)
+    .setFooter({ text: 'Based on LFG activity' });
+  await message.reply({ embeds: [embed] });
+}
+
 client.login(process.env.DISCORD_TOKEN);
