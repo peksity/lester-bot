@@ -678,45 +678,45 @@ client.on(Events.MessageCreate, async (message) => {
       'unblacklist': () => handleUnblacklist(message, args),
       'blacklistcheck': () => handleBlacklistCheck(message, args),
       
-      // ECONOMY SYSTEM
-      'balance': () => handleBalance(message),
-      'bal': () => handleBalance(message),
-      'wallet': () => handleBalance(message),
-      'daily': () => handleDaily(message),
-      'work': () => handleWork(message),
-      'crime': () => handleCrime(message),
-      'slots': () => handleSlots(message, args),
-      'slot': () => handleSlots(message, args),
-      'coinflip': () => handleCoinflip(message, args),
-      'cf': () => handleCoinflip(message, args),
-      'blackjack': () => handleBlackjack(message, args),
-      'bj': () => handleBlackjack(message, args),
-      'roulette': () => handleRoulette(message, args),
-      'pay': () => handlePay(message, args),
-      'give': () => handlePay(message, args),
-      'richest': () => handleRichest(message),
-      'rich': () => handleRichest(message),
+      // ECONOMY SYSTEM - Only in activities category
+      'balance': () => handleActivityCommand(message, () => handleBalance(message)),
+      'bal': () => handleActivityCommand(message, () => handleBalance(message)),
+      'wallet': () => handleActivityCommand(message, () => handleBalance(message)),
+      'daily': () => handleActivityCommand(message, () => handleDaily(message)),
+      'work': () => handleActivityCommand(message, () => handleWork(message)),
+      'crime': () => handleActivityCommand(message, () => handleCrime(message)),
+      'slots': () => handleActivityCommand(message, () => handleSlots(message, args)),
+      'slot': () => handleActivityCommand(message, () => handleSlots(message, args)),
+      'coinflip': () => handleActivityCommand(message, () => handleCoinflip(message, args)),
+      'cf': () => handleActivityCommand(message, () => handleCoinflip(message, args)),
+      'blackjack': () => handleActivityCommand(message, () => handleBlackjack(message, args)),
+      'bj': () => handleActivityCommand(message, () => handleBlackjack(message, args)),
+      'roulette': () => handleActivityCommand(message, () => handleRoulette(message, args)),
+      'pay': () => handleActivityCommand(message, () => handlePay(message, args)),
+      'give': () => handleActivityCommand(message, () => handlePay(message, args)),
+      'richest': () => handleActivityCommand(message, () => handleRichest(message)),
+      'rich': () => handleActivityCommand(message, () => handleRichest(message)),
       
-      // KLING AI
-      'generate': () => klingCommands?.handleGenerate(message, args) || message.reply('AI generation not available.'),
-      'wanted': () => klingCommands?.handleWanted(message, args) || message.reply('AI generation not available.'),
-      'bounty': () => klingCommands?.handleBounty(message, args) || message.reply('AI generation not available.'),
-      'victory': () => klingCommands?.handleVictory(message, args) || message.reply('AI generation not available.'),
-      'video': () => klingCommands?.handleVideo(message, args) || message.reply('AI generation not available.'),
+      // KLING AI - Only in activities category
+      'generate': () => handleActivityCommand(message, () => klingCommands?.handleGenerate(message, args) || message.reply('AI generation not available.')),
+      'wanted': () => handleActivityCommand(message, () => klingCommands?.handleWanted(message, args) || message.reply('AI generation not available.')),
+      'bounty': () => handleActivityCommand(message, () => klingCommands?.handleBounty(message, args) || message.reply('AI generation not available.')),
+      'victory': () => handleActivityCommand(message, () => klingCommands?.handleVictory(message, args) || message.reply('AI generation not available.')),
+      'video': () => handleActivityCommand(message, () => klingCommands?.handleVideo(message, args) || message.reply('AI generation not available.')),
       
-      // HEIST PLANNER
-      'plan': () => handlePlan(message, args),
-      'grind': () => handlePlan(message, args),
+      // HEIST PLANNER - Only in activities category
+      'plan': () => handleActivityCommand(message, () => handlePlan(message, args)),
+      'grind': () => handleActivityCommand(message, () => handlePlan(message, args)),
       
-      // REPUTATION
-      'reputation': () => handleReputation(message, args),
-      'rate': () => handleRate(message, args),
-      'partners': () => handlePartners(message),
-      'connection': () => handleConnection(message, args),
+      // REPUTATION - Only in activities category
+      'reputation': () => handleActivityCommand(message, () => handleReputation(message, args)),
+      'rate': () => handleActivityCommand(message, () => handleRate(message, args)),
+      'partners': () => handleActivityCommand(message, () => handlePartners(message)),
+      'connection': () => handleActivityCommand(message, () => handleConnection(message, args)),
       
-      // PREDICTIVE
-      'mytime': () => handleMyTime(message),
-      'peaktimes': () => handlePeakTimes(message),
+      // PREDICTIVE - Only in activities category
+      'mytime': () => handleActivityCommand(message, () => handleMyTime(message)),
+      'peaktimes': () => handleActivityCommand(message, () => handlePeakTimes(message)),
       
       // ACTIVITY CHANNELS SETUP
       'setupactivities': () => handleSetupActivities(message)
@@ -2399,6 +2399,28 @@ async function handlePeakTimes(message) {
     .setColor(0x9932CC)
     .setFooter({ text: 'Based on LFG activity' });
   await message.reply({ embeds: [embed] });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ACTIVITY COMMAND GATE - Only allows commands in activities category
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const ACTIVITIES_CATEGORY_ID = '1454372554037923937';
+
+async function handleActivityCommand(message, callback) {
+  const parentId = message.channel.parentId;
+  
+  if (parentId !== ACTIVITIES_CATEGORY_ID) {
+    // Find the category to get channel names
+    const category = message.guild.channels.cache.get(ACTIVITIES_CATEGORY_ID);
+    const categoryName = category?.name || '🎮 ACTIVITIES';
+    
+    await message.reply(`⚠️ This command only works in the **${categoryName}** channels!\n\nHead over there to use economy, AI, and reputation features.`);
+    return;
+  }
+  
+  // They're in the right place, run the command
+  await callback();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
