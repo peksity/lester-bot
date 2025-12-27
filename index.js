@@ -2402,7 +2402,7 @@ async function handlePeakTimes(message) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SETUP ACTIVITIES - Creates casino, ai-lab, crew-finder channels
+// SETUP ACTIVITIES - Creates activity-guide channel
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function handleSetupActivities(message) {
@@ -2410,31 +2410,35 @@ async function handleSetupActivities(message) {
     return message.reply('Admin only.');
   }
 
-  const statusMsg = await message.reply('🔧 Setting up activity channels...');
+  const statusMsg = await message.reply('🔧 Creating activity guide...');
 
   try {
     const guild = message.guild;
+    const categoryId = '1454372554037923937';
 
-    // Create category
-    const category = await guild.channels.create({
-      name: '🎮 ACTIVITIES',
-      type: 4, // Category
-      position: 5
-    });
-
-    // Create #casino
-    const casinoChannel = await guild.channels.create({
-      name: 'casino',
+    // Create #activity-guide (read-only)
+    const guideChannel = await guild.channels.create({
+      name: 'activity-guide',
       type: 0,
-      parent: category.id,
-      topic: '🎰 Gamble your chips! Use ?daily to start.'
+      parent: categoryId,
+      topic: '📖 Learn how to use all activity features!',
+      permissionOverwrites: [
+        {
+          id: guild.id,
+          deny: [PermissionFlagsBits.SendMessages],
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory]
+        }
+      ]
     });
 
-    // Casino intro embed
+    // Move to top of category
+    await guideChannel.setPosition(0).catch(() => {});
+
+    // Casino embed
     const casinoEmbed = new EmbedBuilder()
-      .setTitle('🎰 WELCOME TO THE CASINO')
+      .setTitle('🎰 CASINO')
       .setDescription(`
-**Your chips, your risk. Start gambling!**
+**Use these commands in #casino**
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -2455,27 +2459,14 @@ async function handleSetupActivities(message) {
 \`?richest\` - Leaderboard
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Start with \`?daily\` to get your free chips!**
       `)
-      .setColor(0xFFD700)
-      .setImage('https://i.imgur.com/8QZqX0K.png');
-    
-    await casinoChannel.send({ embeds: [casinoEmbed] });
+      .setColor(0xFFD700);
 
-    // Create #ai-lab
-    const aiChannel = await guild.channels.create({
-      name: 'ai-lab',
-      type: 0,
-      parent: category.id,
-      topic: '🎨 Generate AI images and videos!'
-    });
-
-    // AI Lab intro embed
+    // AI Lab embed
     const aiEmbed = new EmbedBuilder()
-      .setTitle('🎨 AI GENERATION LAB')
+      .setTitle('🎨 AI LAB')
       .setDescription(`
-**Create custom images and videos with AI!**
+**Use these commands in #ai-lab**
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -2497,22 +2488,12 @@ async function handleSetupActivities(message) {
 \`?video car chase through city at night\`
       `)
       .setColor(0x9932CC);
-    
-    await aiChannel.send({ embeds: [aiEmbed] });
 
-    // Create #crew-finder
-    const crewChannel = await guild.channels.create({
-      name: 'crew-finder',
-      type: 0,
-      parent: category.id,
-      topic: '🤝 Find reliable crew members and check reputations!'
-    });
-
-    // Crew Finder intro embed
+    // Crew Finder embed
     const crewEmbed = new EmbedBuilder()
       .setTitle('🤝 CREW FINDER')
       .setDescription(`
-**Find reliable players and build your reputation!**
+**Use these commands in #crew-finder**
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -2533,15 +2514,15 @@ async function handleSetupActivities(message) {
 **Rate good teammates to boost their rep!**
       `)
       .setColor(0x00BFFF);
-    
-    await crewChannel.send({ embeds: [crewEmbed] });
 
-    await statusMsg.edit(`✅ Activity channels created!
+    // Send all embeds
+    await guideChannel.send({ embeds: [casinoEmbed] });
+    await guideChannel.send({ embeds: [aiEmbed] });
+    await guideChannel.send({ embeds: [crewEmbed] });
 
-📁 **🎮 ACTIVITIES**
-├ #casino - Gambling & economy
-├ #ai-lab - AI image/video generation
-└ #crew-finder - Reputation & planning`);
+    await statusMsg.edit(`✅ Created #activity-guide (read-only)
+
+Users can see the instructions but can't type there.`);
 
   } catch (error) {
     console.error('Setup activities error:', error);
