@@ -716,7 +716,10 @@ client.on(Events.MessageCreate, async (message) => {
       
       // PREDICTIVE
       'mytime': () => handleMyTime(message),
-      'peaktimes': () => handlePeakTimes(message)
+      'peaktimes': () => handlePeakTimes(message),
+      
+      // ACTIVITY CHANNELS SETUP
+      'setupactivities': () => handleSetupActivities(message)
     };
     
     if (commands[cmd]) { 
@@ -2396,6 +2399,154 @@ async function handlePeakTimes(message) {
     .setColor(0x9932CC)
     .setFooter({ text: 'Based on LFG activity' });
   await message.reply({ embeds: [embed] });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SETUP ACTIVITIES - Creates casino, ai-lab, crew-finder channels
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handleSetupActivities(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('Admin only.');
+  }
+
+  const statusMsg = await message.reply('🔧 Setting up activity channels...');
+
+  try {
+    const guild = message.guild;
+
+    // Create category
+    const category = await guild.channels.create({
+      name: '🎮 ACTIVITIES',
+      type: 4, // Category
+      position: 5
+    });
+
+    // Create #casino
+    const casinoChannel = await guild.channels.create({
+      name: 'casino',
+      type: 0,
+      parent: category.id,
+      topic: '🎰 Gamble your chips! Use ?daily to start.'
+    });
+
+    // Casino intro embed
+    const casinoEmbed = new EmbedBuilder()
+      .setTitle('🎰 WELCOME TO THE CASINO')
+      .setDescription(`
+**Your chips, your risk. Start gambling!**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💵 **GET CHIPS:**
+\`?daily\` - Free daily chips (streak bonus!)
+\`?work\` - Earn chips (30min cooldown)
+\`?crime\` - High risk, high reward (1hr cooldown)
+
+🎲 **GAMBLE:**
+\`?slots 100\` - Spin the slots
+\`?coinflip 50 heads\` - 50/50 bet
+\`?blackjack 100\` - Play 21
+\`?roulette 100 red\` - Spin the wheel
+
+📊 **OTHER:**
+\`?balance\` - Check your chips
+\`?pay @user 100\` - Send chips
+\`?richest\` - Leaderboard
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**Start with \`?daily\` to get your free chips!**
+      `)
+      .setColor(0xFFD700)
+      .setImage('https://i.imgur.com/8QZqX0K.png');
+    
+    await casinoChannel.send({ embeds: [casinoEmbed] });
+
+    // Create #ai-lab
+    const aiChannel = await guild.channels.create({
+      name: 'ai-lab',
+      type: 0,
+      parent: category.id,
+      topic: '🎨 Generate AI images and videos!'
+    });
+
+    // AI Lab intro embed
+    const aiEmbed = new EmbedBuilder()
+      .setTitle('🎨 AI GENERATION LAB')
+      .setDescription(`
+**Create custom images and videos with AI!**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🖼️ **IMAGES:**
+\`?generate [prompt]\` - Create any image
+\`?wanted @user\` - GTA wanted poster
+\`?bounty @user\` - RDO bounty poster
+\`?victory [text]\` - Victory screen
+
+🎬 **VIDEO:**
+\`?video [prompt]\` - Generate short video
+*(Takes 1-2 minutes)*
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**Examples:**
+\`?generate epic sunset over Los Santos\`
+\`?wanted @friend\`
+\`?video car chase through city at night\`
+      `)
+      .setColor(0x9932CC);
+    
+    await aiChannel.send({ embeds: [aiEmbed] });
+
+    // Create #crew-finder
+    const crewChannel = await guild.channels.create({
+      name: 'crew-finder',
+      type: 0,
+      parent: category.id,
+      topic: '🤝 Find reliable crew members and check reputations!'
+    });
+
+    // Crew Finder intro embed
+    const crewEmbed = new EmbedBuilder()
+      .setTitle('🤝 CREW FINDER')
+      .setDescription(`
+**Find reliable players and build your reputation!**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⭐ **REPUTATION:**
+\`?rep @user\` - Check someone's reputation
+\`?rate @user 1-5\` - Rate after playing together
+\`?partners\` - See your frequent crew
+\`?connection @user\` - Your history with someone
+
+📊 **PLANNING:**
+\`?plan 60 2\` - Best activities for 60min with 2 players
+\`?mytime\` - Your optimal LFG time
+\`?peaktimes\` - When server is most active
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**Check \`?rep\` before joining randoms!**
+**Rate good teammates to boost their rep!**
+      `)
+      .setColor(0x00BFFF);
+    
+    await crewChannel.send({ embeds: [crewEmbed] });
+
+    await statusMsg.edit(`✅ Activity channels created!
+
+📁 **🎮 ACTIVITIES**
+├ #casino - Gambling & economy
+├ #ai-lab - AI image/video generation
+└ #crew-finder - Reputation & planning`);
+
+  } catch (error) {
+    console.error('Setup activities error:', error);
+    await statusMsg.edit(`❌ Error: ${error.message}`);
+  }
 }
 
 client.login(process.env.DISCORD_TOKEN);
