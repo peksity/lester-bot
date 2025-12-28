@@ -100,10 +100,10 @@ class KlingAI {
   async generateImage(prompt, options = {}) {
     try {
       const requestData = {
-        model_name: options.model || 'kling-v1-5',  // Updated model
+        model_name: options.model || 'kling-v1',  // Use base model
         prompt: prompt,
         negative_prompt: options.negativePrompt || 'blurry, low quality, distorted',
-        cfg: options.cfgScale || 7,
+        cfg_scale: options.cfgScale || 7,
         aspect_ratio: options.aspectRatio || '16:9',
         n: options.count || 1
       };
@@ -138,13 +138,13 @@ class KlingAI {
   async generateVideo(prompt, options = {}) {
     try {
       const requestData = {
-        model_name: options.model || 'kling-v1-5',
+        model_name: options.model || 'kling-v1',  // Use base model
         prompt: prompt,
         negative_prompt: options.negativePrompt || 'blurry, low quality',
         duration: options.duration || '5', // 5 or 10 seconds
         aspect_ratio: options.aspectRatio || '16:9',
-        cfg: options.cfgScale || 0.5,
-        mode: options.mode || 'std'  // std or pro
+        cfg_scale: options.cfgScale || 0.5
+        // Removed 'mode' parameter - not supported on all models
       };
 
       console.log('[KLING] Sending video request:', JSON.stringify(requestData));
