@@ -100,16 +100,22 @@ class KlingAI {
   async generateImage(prompt, options = {}) {
     try {
       const requestData = {
-        model: options.model || 'kling-v1',
+        model_name: options.model || 'kling-v1-5',  // Updated model
         prompt: prompt,
         negative_prompt: options.negativePrompt || 'blurry, low quality, distorted',
-        cfg_scale: options.cfgScale || 7,
+        cfg: options.cfgScale || 7,
         aspect_ratio: options.aspectRatio || '16:9',
         n: options.count || 1
       };
 
+      console.log('[KLING] Sending image request:', JSON.stringify(requestData));
       const response = await this.apiRequest('/v1/images/generations', 'POST', requestData);
+      console.log('[KLING] Response:', JSON.stringify(response));
       
+      if (response.code !== 0 && response.code !== undefined) {
+        return { success: false, error: response.message || 'API error' };
+      }
+
       if (response.error) {
         return { success: false, error: response.error };
       }
@@ -132,16 +138,23 @@ class KlingAI {
   async generateVideo(prompt, options = {}) {
     try {
       const requestData = {
-        model: options.model || 'kling-v1',
+        model_name: options.model || 'kling-v1-5',
         prompt: prompt,
         negative_prompt: options.negativePrompt || 'blurry, low quality',
         duration: options.duration || '5', // 5 or 10 seconds
         aspect_ratio: options.aspectRatio || '16:9',
-        cfg_scale: options.cfgScale || 0.5
+        cfg: options.cfgScale || 0.5,
+        mode: options.mode || 'std'  // std or pro
       };
 
+      console.log('[KLING] Sending video request:', JSON.stringify(requestData));
       const response = await this.apiRequest('/v1/videos/text2video', 'POST', requestData);
+      console.log('[KLING] Response:', JSON.stringify(response));
       
+      if (response.code !== 0 && response.code !== undefined) {
+        return { success: false, error: response.message || 'API error' };
+      }
+
       if (response.error) {
         return { success: false, error: response.error };
       }
