@@ -719,7 +719,10 @@ client.on(Events.MessageCreate, async (message) => {
       'peaktimes': () => handleActivityCommand(message, () => handlePeakTimes(message)),
       
       // ACTIVITY CHANNELS SETUP
-      'setupactivities': () => handleSetupActivities(message)
+      'setupactivities': () => handleSetupActivities(message),
+      
+      // JOIN-LEAVE LOG SETUP
+      'setupjoinleave': () => handleSetupJoinLeave(message)
     };
     
     if (commands[cmd]) { 
@@ -2552,4 +2555,212 @@ Users can see the instructions but can't type there.`);
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SETUP JOIN-LEAVE - Creates join-leave log channel in Staff category
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handleSetupJoinLeave(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('Admin only.');
+  }
+
+  const statusMsg = await message.reply('🔧 Creating join-leave log channel...');
+
+  try {
+    const guild = message.guild;
+    
+    // Find Staff category
+    let staffCategory = guild.channels.cache.find(c => 
+      c.type === 4 && (c.name.toLowerCase().includes('staff') || c.name.toLowerCase().includes('admin'))
+    );
+    
+    // Create category if it doesn't exist
+    if (!staffCategory) {
+      staffCategory = await guild.channels.create({
+        name: '🔒 STAFF',
+        type: 4,
+        permissionOverwrites: [
+          {
+            id: guild.id,
+            deny: [PermissionFlagsBits.ViewChannel]
+          }
+        ]
+      });
+    }
+
+    // Check if channel already exists
+    let joinLeaveChannel = guild.channels.cache.find(c => c.name === 'join-leave');
+    
+    if (joinLeaveChannel) {
+      await statusMsg.edit('⚠️ #join-leave channel already exists!');
+      return;
+    }
+
+    // Create join-leave channel (staff only)
+    joinLeaveChannel = await guild.channels.create({
+      name: 'join-leave',
+      type: 0,
+      parent: staffCategory.id,
+      topic: '📊 Member join and leave logs',
+      permissionOverwrites: [
+        {
+          id: guild.id,
+          deny: [PermissionFlagsBits.ViewChannel]
+        }
+      ]
+    });
+
+    // Send intro message
+    const introEmbed = new EmbedBuilder()
+      .setTitle('📊 Join/Leave Log')
+      .setDescription(`
+**This channel logs all member joins and leaves.**
+
+📥 **Green** = Member joined
+📤 **Red** = Member left
+
+*Lester also welcomes new members in #general with unique messages.*
+      `)
+      .setColor(0x00FF00)
+      .setTimestamp();
+    
+    await joinLeaveChannel.send({ embeds: [introEmbed] });
+
+    await statusMsg.edit(`✅ Created #join-leave in Staff category!
+
+📥 New members → Logged here + welcomed in #general
+📤 Leaving members → Logged here`);
+
+  } catch (error) {
+    console.error('Setup join-leave error:', error);
+    await statusMsg.edit(`❌ Error: ${error.message}`);
+  }
+}
+
 client.login(process.env.DISCORD_TOKEN);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WELCOME SYSTEM - AI-generated unique welcomes + Join/Leave logging
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const WELCOME_MESSAGES = [
+  "Well, well... look who finally showed up. {user}, I've been watching you for a while now. *adjusts glasses* Welcome to the crew.",
+  "*sighs heavily* Another one? Fine. {user}, welcome to The Unpatched Method. Try not to break anything.",
+  "Ah, {user}. I was wondering when you'd find us. *types rapidly* You're now in my system. Welcome.",
+  "{user} just walked in. *checks multiple monitors* Clean record... for now. Welcome to the operation.",
+  "*spins around in chair* {user}! Perfect timing. We were just about to pull something big. Welcome aboard.",
+  "Hold on, let me run a background check... *keyboard clicking* ...okay {user}, you're clear. Welcome to the family.",
+  "Another recruit? *rubs temples* Alright {user}, listen up - welcome to The Unpatched Method. Don't make me regret this.",
+  "{user} has entered the building. *cracks knuckles* Time to show you how we do things around here. Welcome.",
+  "My systems detected a new arrival... {user}. *smirks* Welcome. Try to keep up.",
+  "*looks up from screens* Oh, {user}. I knew you'd come eventually. Welcome to the inner circle.",
+  "Security alert: New member detected. *disables alarm* Stand down, it's just {user}. Welcome, kid.",
+  "{user}, you made it past my firewalls. Impressive. *nods approvingly* Welcome to the crew.",
+  "*mutters* Another mouth to feed... I mean, welcome {user}! Glad you could join us. Really.",
+  "Incoming transmission from... {user}? *accepts connection* Welcome to The Unpatched Method. Don't disappoint me.",
+  "{user} just joined. *evil laugh* Fresh meat for the grinder. Just kidding. Mostly. Welcome!",
+  "*adjusts tinfoil hat* They told me you'd come, {user}. The algorithms predicted it. Welcome.",
+  "Attention everyone: {user} has arrived. *dramatic pause* ...What? I can be theatrical sometimes. Welcome.",
+  "{user}! Finally, someone who looks competent. *squints* You ARE competent, right? Welcome anyway.",
+  "*hacking intensifies* ...Sorry, had to verify your identity, {user}. You check out. Welcome to the operation.",
+  "My spider senses are tingling... oh, it's just {user}. Welcome to The Unpatched Method!"
+];
+
+client.on(Events.GuildMemberAdd, async (member) => {
+  try {
+    const guild = member.guild;
+    
+    // ═══════════════════════════════════════════════════════════════
+    // STAFF LOG - Join/Leave channel
+    // ═══════════════════════════════════════════════════════════════
+    let joinLeaveChannel = guild.channels.cache.find(c => 
+      c.name === 'join-leave' || c.name === 'join-leave-log' || c.name === 'member-log'
+    );
+    
+    if (joinLeaveChannel) {
+      const joinEmbed = new EmbedBuilder()
+        .setTitle('📥 Member Joined')
+        .setDescription(`${member} joined the server`)
+        .addFields(
+          { name: 'User', value: `${member.user.tag}`, inline: true },
+          { name: 'ID', value: member.id, inline: true },
+          { name: 'Account Created', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true },
+          { name: 'Member Count', value: `${guild.memberCount}`, inline: true }
+        )
+        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+        .setColor(0x00FF00)
+        .setTimestamp();
+      
+      await joinLeaveChannel.send({ embeds: [joinEmbed] });
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // GENERAL CHAT - AI Welcome Message
+    // ═══════════════════════════════════════════════════════════════
+    let generalChannel = guild.channels.cache.find(c => 
+      c.name === 'general' || c.name === 'general-chat' || c.name === 'chat'
+    );
+    
+    if (generalChannel) {
+      // Pick random welcome message
+      const randomMsg = WELCOME_MESSAGES[Math.floor(Math.random() * WELCOME_MESSAGES.length)];
+      const welcomeText = randomMsg.replace(/{user}/g, `${member}`);
+      
+      // Sometimes use AI for extra unique message
+      if (Math.random() < 0.3 && anthropic) {
+        try {
+          const response = await anthropic.messages.create({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 150,
+            messages: [{
+              role: 'user',
+              content: `You are Lester Crest from GTA V. Write a SHORT (1-2 sentences) unique welcome message for a new Discord member named ${member.user.username}. Be snarky, paranoid, but welcoming. Include one *action* like *adjusts glasses* or *types rapidly*. Don't use emojis.`
+            }]
+          });
+          
+          const aiWelcome = response.content[0].text;
+          await generalChannel.send(`${member} ${aiWelcome}`);
+        } catch (e) {
+          // Fallback to random message
+          await generalChannel.send(welcomeText);
+        }
+      } else {
+        await generalChannel.send(welcomeText);
+      }
+    }
+    
+  } catch (error) {
+    console.error('[WELCOME] Error:', error.message);
+  }
+});
+
+client.on(Events.GuildMemberRemove, async (member) => {
+  try {
+    const guild = member.guild;
+    
+    // Log to join-leave channel
+    let joinLeaveChannel = guild.channels.cache.find(c => 
+      c.name === 'join-leave' || c.name === 'join-leave-log' || c.name === 'member-log'
+    );
+    
+    if (joinLeaveChannel) {
+      const leaveEmbed = new EmbedBuilder()
+        .setTitle('📤 Member Left')
+        .setDescription(`${member.user.tag} left the server`)
+        .addFields(
+          { name: 'User', value: `${member.user.tag}`, inline: true },
+          { name: 'ID', value: member.id, inline: true },
+          { name: 'Joined', value: member.joinedAt ? `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>` : 'Unknown', inline: true },
+          { name: 'Member Count', value: `${guild.memberCount}`, inline: true }
+        )
+        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+        .setColor(0xFF0000)
+        .setTimestamp();
+      
+      await joinLeaveChannel.send({ embeds: [leaveEmbed] });
+    }
+    
+  } catch (error) {
+    console.error('[LEAVE] Error:', error.message);
+  }
+});
