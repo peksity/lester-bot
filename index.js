@@ -3004,7 +3004,7 @@ Hey **${member.user.username}**, welcome to **The Unpatched Method**.
         .addFields(
           {
             name: '✅ HOW TO VERIFY',
-            value: '```\n1. Go to #verify channel\n2. Click the ✅ button OR type the command\n3. That\'s it - you\'re in!\n```',
+            value: '```\n1. Go to #verify channel\n2. Click the ✅ button\n3. That\'s it - you\'re in!\n```',
             inline: false
           },
           {
