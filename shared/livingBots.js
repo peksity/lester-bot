@@ -308,10 +308,10 @@ class GossipSystem {
   }
 
   async maybeGossip(guild) {
-    // Only gossip every 30+ minutes
-    if (Date.now() - this.lastGossip < 30 * 60 * 1000) return;
-    if (this.gossipQueue.length < 3) return;
-    if (Math.random() > 0.3) return;
+    // Only gossip every 5+ minutes (lowered from 30 for testing)
+    if (Date.now() - this.lastGossip < 5 * 60 * 1000) return;
+    if (this.gossipQueue.length < 1) return; // Lowered from 3
+    if (Math.random() > 0.5) return; // 50% chance (raised from 30%)
     
     // Gossip in general chat so everyone sees it
     const gossipChannel = guild.channels.cache.find(c => 

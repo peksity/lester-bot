@@ -808,7 +808,10 @@ client.on(Events.MessageCreate, async (message) => {
       'setupjoinleave': () => handleSetupJoinLeave(message),
       
       // BOT GOSSIP SETUP
-      'setupgossip': () => handleSetupGossip(message)
+      'setupgossip': () => handleSetupGossip(message),
+      
+      // FORCE GOSSIP (testing)
+      'forcegossip': () => handleForceGossip(message)
     };
     
     if (commands[cmd]) { 
@@ -2806,6 +2809,82 @@ The bots will occasionally:
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// FORCE GOSSIP - Manually trigger bot gossip for testing
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handleForceGossip(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('Admin only.');
+  }
+
+  const statusMsg = await message.reply('🗣️ Generating bot gossip...');
+
+  try {
+    const guild = message.guild;
+    
+    // Find general channel
+    const generalChannel = guild.channels.cache.find(c => 
+      c.name === 'general' || c.name === 'general-chat' || c.name === 'chat'
+    );
+    
+    if (!generalChannel) {
+      return statusMsg.edit('❌ No #general channel found.');
+    }
+
+    // Pick two random bots
+    const bots = ['lester', 'pavel', 'cripps', 'chief', 'nazar'];
+    const bot1 = bots[Math.floor(Math.random() * bots.length)];
+    let bot2 = bots[Math.floor(Math.random() * bots.length)];
+    while (bot2 === bot1) bot2 = bots[Math.floor(Math.random() * bots.length)];
+
+    const botNames = {
+      lester: 'Lester',
+      pavel: 'Pavel',
+      cripps: 'Cripps',
+      chief: 'Police Chief',
+      nazar: 'Madam Nazar'
+    };
+
+    // Generate gossip
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 400,
+      messages: [{
+        role: 'user',
+        content: `Write a short, funny gossip exchange (3-4 messages) between ${botNames[bot1]} and ${botNames[bot2]} from GTA/RDO. They're chatting in a Discord server about random stuff - maybe about users, heists, the server, or just bickering about something stupid.
+
+${botNames[bot1]} personality: ${bot1 === 'lester' ? 'paranoid genius, snarky' : bot1 === 'pavel' ? 'cheerful Russian submarine captain' : bot1 === 'cripps' ? 'old man who tells boring stories' : bot1 === 'chief' ? 'stern lawman' : 'mysterious fortune teller'}
+
+${botNames[bot2]} personality: ${bot2 === 'lester' ? 'paranoid genius, snarky' : bot2 === 'pavel' ? 'cheerful Russian submarine captain' : bot2 === 'cripps' ? 'old man who tells boring stories' : bot2 === 'chief' ? 'stern lawman' : 'mysterious fortune teller'}
+
+Format as:
+**${botNames[bot1]}:** [message]
+**${botNames[bot2]}:** [response]
+**${botNames[bot1]}:** [reply]
+
+Keep it short, funny, in character. Include *actions* occasionally.`
+      }]
+    });
+
+    const gossip = response.content[0].text;
+
+    const embed = new EmbedBuilder()
+      .setTitle('🗣️ Bot Chatter')
+      .setDescription(gossip)
+      .setColor(0x9932CC)
+      .setFooter({ text: 'The bots are talking...' })
+      .setTimestamp();
+
+    await generalChannel.send({ embeds: [embed] });
+    await statusMsg.edit('✅ Gossip sent to #general!');
+
+  } catch (error) {
+    console.error('Force gossip error:', error);
+    await statusMsg.edit(`❌ Error: ${error.message}`);
+  }
+}
+
 client.login(process.env.DISCORD_TOKEN);
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2910,17 +2989,43 @@ client.on(Events.GuildMemberAdd, async (member) => {
     }
     
     // ═══════════════════════════════════════════════════════════════
-    // DM WELCOME - Send private welcome message
+    // DM WELCOME - Send private welcome message with VERIFICATION
     // ═══════════════════════════════════════════════════════════════
     try {
-      const dmEmbed = new EmbedBuilder()
+      const verifyEmbed = new EmbedBuilder()
+        .setTitle('⚠️ IMPORTANT: VERIFY YOURSELF ⚠️')
+        .setDescription(`
+# 🚨 YOU MUST VERIFY TO ACCESS THE SERVER 🚨
+
+Hey **${member.user.username}**, welcome to **The Unpatched Method**.
+
+**Before you can see any channels, you NEED to verify.**
+        `)
+        .addFields(
+          {
+            name: '✅ HOW TO VERIFY',
+            value: '```\n1. Go to #verify channel\n2. Click the ✅ button OR type the command\n3. That\'s it - you\'re in!\n```',
+            inline: false
+          },
+          {
+            name: '❌ WITHOUT VERIFICATION',
+            value: '• You can\'t see channels\n• You can\'t chat\n• You can\'t join LFG\n• You\'re basically invisible',
+            inline: true
+          },
+          {
+            name: '✅ AFTER VERIFICATION',
+            value: '• Full server access\n• LFG for heists & wagons\n• Talk to our AI bots\n• Join the community',
+            inline: true
+          }
+        )
+        .setColor(0xFF0000)
+        .setFooter({ text: '⚠️ VERIFY FIRST - THEN READ BELOW ⚠️' })
+        .setTimestamp();
+
+      const infoEmbed = new EmbedBuilder()
         .setTitle('🎮 Welcome to The Unpatched Method!')
         .setDescription(`
-Hey **${member.user.username}**,
-
-*adjusts glasses* So you found us. Good. I'm Lester, and I run things around here.
-
-Here's what you need to know:
+Once you're verified, here's what you need to know:
         `)
         .addFields(
           { 
@@ -2946,10 +3051,9 @@ Here's what you need to know:
         )
         .setColor(0xFF6B35)
         .setThumbnail(guild.iconURL({ dynamic: true }))
-        .setFooter({ text: 'The Unpatched Method • Welcome to the crew' })
-        .setTimestamp();
+        .setFooter({ text: 'The Unpatched Method • Welcome to the crew' });
       
-      await member.send({ embeds: [dmEmbed] });
+      await member.send({ content: '# 🚨 READ THIS FIRST 🚨', embeds: [verifyEmbed, infoEmbed] });
     } catch (dmError) {
       // User has DMs disabled, that's fine
       console.log(`[WELCOME] Could not DM ${member.user.username} - DMs disabled`);
