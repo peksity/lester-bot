@@ -2864,16 +2864,24 @@ client.on(Events.GuildMemberAdd, async (member) => {
     }
     
     // ═══════════════════════════════════════════════════════════════
-    // GENERAL CHAT - AI Welcome Message
+    // GENERAL CHAT - AI Welcome Message + Role Mentions
     // ═══════════════════════════════════════════════════════════════
     let generalChannel = guild.channels.cache.find(c => 
       c.name === 'general' || c.name === 'general-chat' || c.name === 'chat'
     );
     
     if (generalChannel) {
+      // Find roles to mention
+      const welcomerRole = guild.roles.cache.find(r => 
+        r.name.toLowerCase().includes('welcomer') || 
+        r.name.toLowerCase().includes('greeter') ||
+        r.name.toLowerCase().includes('staff') ||
+        r.name.toLowerCase().includes('mod')
+      );
+      
       // Pick random welcome message
       const randomMsg = WELCOME_MESSAGES[Math.floor(Math.random() * WELCOME_MESSAGES.length)];
-      const welcomeText = randomMsg.replace(/{user}/g, `${member}`);
+      let welcomeText = randomMsg.replace(/{user}/g, `${member}`);
       
       // Sometimes use AI for extra unique message
       if (Math.random() < 0.3 && anthropic) {
@@ -2887,15 +2895,64 @@ client.on(Events.GuildMemberAdd, async (member) => {
             }]
           });
           
-          const aiWelcome = response.content[0].text;
-          await generalChannel.send(`${member} ${aiWelcome}`);
+          welcomeText = `${member} ${response.content[0].text}`;
         } catch (e) {
-          // Fallback to random message
-          await generalChannel.send(welcomeText);
+          // Keep original random message
         }
-      } else {
-        await generalChannel.send(welcomeText);
       }
+      
+      // Add role mention if found
+      if (welcomerRole) {
+        welcomeText += `\n\n${welcomerRole} - Someone come say hi!`;
+      }
+      
+      await generalChannel.send(welcomeText);
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // DM WELCOME - Send private welcome message
+    // ═══════════════════════════════════════════════════════════════
+    try {
+      const dmEmbed = new EmbedBuilder()
+        .setTitle('🎮 Welcome to The Unpatched Method!')
+        .setDescription(`
+Hey **${member.user.username}**,
+
+*adjusts glasses* So you found us. Good. I'm Lester, and I run things around here.
+
+Here's what you need to know:
+        `)
+        .addFields(
+          { 
+            name: '📋 Get Started', 
+            value: '• Check out the rules\n• Grab some roles\n• Introduce yourself', 
+            inline: true 
+          },
+          { 
+            name: '🎯 LFG Channels', 
+            value: '• **#cayo-lfg** - GTA Heists\n• **#wagon-lfg** - RDO Trading\n• **#bounty-lfg** - RDO Bounties', 
+            inline: true 
+          },
+          { 
+            name: '🤖 Talk to the Bots', 
+            value: '• **#talk-to-lester** - That\'s me\n• **#talk-to-pavel** - Heist help\n• **#casino** - Gamble chips', 
+            inline: false 
+          },
+          {
+            name: '💡 Pro Tip',
+            value: 'Type `?daily` in #casino to get free chips every day. Don\'t tell anyone I told you.',
+            inline: false
+          }
+        )
+        .setColor(0xFF6B35)
+        .setThumbnail(guild.iconURL({ dynamic: true }))
+        .setFooter({ text: 'The Unpatched Method • Welcome to the crew' })
+        .setTimestamp();
+      
+      await member.send({ embeds: [dmEmbed] });
+    } catch (dmError) {
+      // User has DMs disabled, that's fine
+      console.log(`[WELCOME] Could not DM ${member.user.username} - DMs disabled`);
     }
     
   } catch (error) {
