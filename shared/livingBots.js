@@ -313,8 +313,9 @@ class GossipSystem {
     if (this.gossipQueue.length < 3) return;
     if (Math.random() > 0.3) return;
     
+    // Gossip in general chat so everyone sees it
     const gossipChannel = guild.channels.cache.find(c => 
-      c.name === 'bot-gossip' || c.name === 'bot-chat' || c.name === 'staff-bot'
+      c.name === 'general' || c.name === 'general-chat' || c.name === 'chat'
     );
     
     if (!gossipChannel) return;
