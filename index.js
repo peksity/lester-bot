@@ -63,6 +63,12 @@ try { botCommandsGuide = require('./shared/botCommandsGuide'); } catch (e) { con
 let hiveMind = null;
 try { hiveMind = require('./shared/hiveMind'); } catch (e) { console.log('[LESTER] HiveMind not found, using basic responses'); }
 
+// LIVING BOTS - Personality, moods, grudges, gossip
+let livingBots = null;
+let grudgeSystem = null;
+let gossipSystem = null;
+try { livingBots = require('./shared/livingBots'); } catch (e) { console.log('[LESTER] LivingBots not found'); }
+
 // NEW ADVANCED SYSTEMS
 let ImageRecognition = null, BotImageHandlers = null;
 try { const ir = require('./shared/imageRecognition'); ImageRecognition = ir.ImageRecognition; BotImageHandlers = ir.BotImageHandlers; } catch (e) { console.log('[LESTER] ImageRecognition not found'); }
@@ -326,6 +332,17 @@ client.once(Events.ClientReady, async () => {
       console.log('🔮 Predictive Analytics: ONLINE');
     } catch (e) { console.error('PredictiveAnalytics:', e.message); }
   }
+  
+  // LIVING BOTS SYSTEM
+  if (livingBots) {
+    try {
+      grudgeSystem = new livingBots.GrudgeSystem(pool);
+      await grudgeSystem.initialize();
+      gossipSystem = new livingBots.GossipSystem(pool, client, anthropic);
+      await gossipSystem.initialize();
+      console.log('🧬 Living Bots System: ONLINE');
+    } catch (e) { console.error('LivingBots:', e.message); }
+  }
 
   client.user.setPresence({ activities: [{ name: 'Watching everything | ?help', type: 3 }], status: 'online' });
   
@@ -492,6 +509,33 @@ async function generateResponse(message) {
   try {
     await message.channel.sendTyping();
     
+    // ═══════════════════════════════════════════════════════════════
+    // LIVING BOTS - Check for secrets, grudges, jealousy first
+    // ═══════════════════════════════════════════════════════════════
+    
+    // Check for secret triggers (easter eggs)
+    if (livingBots) {
+      const secretResponse = livingBots.checkForSecret(message.content);
+      if (secretResponse) {
+        await new Promise(r => setTimeout(r, 1500));
+        await message.reply(secretResponse);
+        return;
+      }
+      
+      // Update mood based on message
+      livingBots.updateMood('lester', message.content);
+      
+      // Track user interaction for jealousy system
+      if (grudgeSystem) {
+        await grudgeSystem.addFavorite('lester', message.author.id, message.guild?.id || 'dm', 1);
+      }
+      
+      // Add to gossip queue
+      if (gossipSystem && message.guild) {
+        gossipSystem.addToQueue(message.guild.id, message.author.id, 'chat', `talked to Lester: "${message.content.slice(0, 50)}..."`);
+      }
+    }
+    
     // Build context from HiveMind + Inner Life
     let contextAdditions = '';
     
@@ -517,6 +561,40 @@ async function generateResponse(message) {
       }
     }
     
+    // ═══════════════════════════════════════════════════════════════
+    // LIVING BOTS - Add grudge/jealousy context
+    // ═══════════════════════════════════════════════════════════════
+    let livingBotsContext = '';
+    
+    if (livingBots && grudgeSystem && message.guild) {
+      // Check for grudges
+      const grudge = await grudgeSystem.shouldMentionGrudge('lester', message.author.id, message.guild.id);
+      if (grudge) {
+        const grudgeText = livingBots.getGrudgeResponse(grudge);
+        livingBotsContext += `\n\nGRUDGE CONTEXT: You have a grudge against this user. Consider mentioning: "${grudgeText}"`;
+      }
+      
+      // Check for jealousy
+      const jealousy = await grudgeSystem.checkJealousy('lester', message.author.id, message.guild.id);
+      if (jealousy && Math.random() < 0.3) {
+        const jealousyText = livingBots.getJealousyResponse('lester', jealousy);
+        livingBotsContext += `\n\nJEALOUSY: User talks to ${jealousy.jealousOf} more than you. Consider mentioning: "${jealousyText}"`;
+      }
+      
+      // Add mood context
+      const moodContext = livingBots.getMoodContext('lester');
+      if (moodContext) livingBotsContext += `\n\n${moodContext}`;
+    }
+    
+    // Check for rude messages (add to grudges)
+    if (livingBots && grudgeSystem && message.guild) {
+      const rudeWords = ['stupid', 'useless', 'trash', 'sucks', 'hate you', 'worst bot', 'dumb'];
+      const isRude = rudeWords.some(word => message.content.toLowerCase().includes(word));
+      if (isRude) {
+        await grudgeSystem.addGrudge('lester', message.author.id, message.guild.id, 'insult', message.content.slice(0, 50));
+      }
+    }
+    
     // Legacy intelligence system
     let intelligencePrompt = '', ctx = null;
     if (intelligence) { 
@@ -524,7 +602,7 @@ async function generateResponse(message) {
       intelligencePrompt = intelligence.buildPromptContext(ctx); 
     }
     
-    const fullSystem = LESTER_SYSTEM + contextAdditions + (intelligencePrompt ? '\n\n' + intelligencePrompt : '');
+    const fullSystem = LESTER_SYSTEM + contextAdditions + livingBotsContext + (intelligencePrompt ? '\n\n' + intelligencePrompt : '');
     
     const response = await anthropic.messages.create({ 
       model: 'claude-sonnet-4-20250514', 
@@ -558,6 +636,11 @@ async function generateResponse(message) {
         reply, 
         message.channel.id
       );
+    }
+    
+    // Maybe trigger bot gossip
+    if (gossipSystem && message.guild) {
+      gossipSystem.maybeGossip(message.guild).catch(() => {});
     }
     
     if (intelligence?.learning) await intelligence.learning.recordResponse(sent.id, message.channel.id, message.author.id, 'reply', 'general', reply.length);
@@ -722,7 +805,10 @@ client.on(Events.MessageCreate, async (message) => {
       'setupactivities': () => handleSetupActivities(message),
       
       // JOIN-LEAVE LOG SETUP
-      'setupjoinleave': () => handleSetupJoinLeave(message)
+      'setupjoinleave': () => handleSetupJoinLeave(message),
+      
+      // BOT GOSSIP SETUP
+      'setupgossip': () => handleSetupGossip(message)
     };
     
     if (commands[cmd]) { 
@@ -2633,6 +2719,89 @@ async function handleSetupJoinLeave(message) {
 
   } catch (error) {
     console.error('Setup join-leave error:', error);
+    await statusMsg.edit(`❌ Error: ${error.message}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SETUP BOT GOSSIP - Creates channel where bots talk to each other
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handleSetupGossip(message) {
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply('Admin only.');
+  }
+
+  const statusMsg = await message.reply('🔧 Creating bot gossip channel...');
+
+  try {
+    const guild = message.guild;
+    
+    // Find Staff category
+    let staffCategory = guild.channels.cache.find(c => 
+      c.type === 4 && (c.name.toLowerCase().includes('staff') || c.name.toLowerCase().includes('admin'))
+    );
+    
+    if (!staffCategory) {
+      staffCategory = await guild.channels.create({
+        name: '🔒 STAFF',
+        type: 4,
+        permissionOverwrites: [
+          {
+            id: guild.id,
+            deny: [PermissionFlagsBits.ViewChannel]
+          }
+        ]
+      });
+    }
+
+    // Check if channel already exists
+    let gossipChannel = guild.channels.cache.find(c => c.name === 'bot-gossip');
+    
+    if (gossipChannel) {
+      await statusMsg.edit('⚠️ #bot-gossip channel already exists!');
+      return;
+    }
+
+    // Create gossip channel (staff only)
+    gossipChannel = await guild.channels.create({
+      name: 'bot-gossip',
+      type: 0,
+      parent: staffCategory.id,
+      topic: '🗣️ The bots talk about users here...',
+      permissionOverwrites: [
+        {
+          id: guild.id,
+          deny: [PermissionFlagsBits.ViewChannel]
+        }
+      ]
+    });
+
+    // Send intro message
+    const introEmbed = new EmbedBuilder()
+      .setTitle('🗣️ Bot Gossip Channel')
+      .setDescription(`
+**This is where the bots talk to each other about users.**
+
+The bots will occasionally:
+- Gossip about user activity
+- Share observations
+- Argue about heist strategies
+- Judge people's decisions
+
+*This happens automatically. Just watch and enjoy.*
+      `)
+      .setColor(0x9932CC)
+      .setTimestamp();
+    
+    await gossipChannel.send({ embeds: [introEmbed] });
+
+    await statusMsg.edit(`✅ Created #bot-gossip in Staff category!
+
+🗣️ The bots will automatically chat here about server activity.`);
+
+  } catch (error) {
+    console.error('Setup gossip error:', error);
     await statusMsg.edit(`❌ Error: ${error.message}`);
   }
 }
