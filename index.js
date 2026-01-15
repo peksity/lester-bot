@@ -2264,42 +2264,38 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
 
 client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
   try {
-    // Check if they gained a verified role
-    const verifiedRoleNames = ['verified', 'member', 'members', '✅ verified', '✅ member'];
+    // Verified role ID
+    const VERIFIED_ROLE_ID = '1453304594317836423';
     
-    for (const roleName of verifiedRoleNames) {
-      const role = newMember.guild.roles.cache.find(r => r.name.toLowerCase() === roleName.toLowerCase());
-      if (!role) continue;
+    const hadRole = oldMember.roles.cache.has(VERIFIED_ROLE_ID);
+    const hasRole = newMember.roles.cache.has(VERIFIED_ROLE_ID);
+    
+    if (!hadRole && hasRole) {
+      // They just verified! Welcome them properly
+      const guild = newMember.guild;
       
-      const hadRole = oldMember.roles.cache.has(role.id);
-      const hasRole = newMember.roles.cache.has(role.id);
+      // Roles channel ID
+      const rolesChannelId = '1453304724681134163';
       
-      if (!hadRole && hasRole) {
-        // They just verified! Welcome them properly
-        const guild = newMember.guild;
+      // Find general channel
+      const generalChannel = guild.channels.cache.find(c => 
+        c.name === 'general' || c.name === 'general-chat' || c.name === 'chat'
+      );
+      
+      if (generalChannel) {
+        const verifiedWelcomes = [
+          `*security systems deactivate* ${newMember} is now verified. Welcome to the REAL operation. Now go pick your roles in <#${rolesChannelId}> - we need to know what you're here for.`,
+          `${newMember} passed the vibe check. *unlocks the good channels* Now head to <#${rolesChannelId}> and tell us what you're grinding - Cayo? Wagons? Bounties?`,
+          `*stamps APPROVED on file* ${newMember} is officially one of us. Don't just stand there - grab your roles in <#${rolesChannelId}> so we know if you're a heister or a trader.`,
+          `Verification complete for ${newMember}. *opens the vault doors* Now the real question - what are you here for? Go to <#${rolesChannelId}> and pick your roles.`,
+          `${newMember} made it past my firewalls. Impressive. Now do us both a favor and select your roles in <#${rolesChannelId}> - GTA? RDO? Both? I need to update my files.`
+        ];
         
-        // Roles channel ID
-        const rolesChannelId = '1453304724681134163';
+        const randomWelcome = verifiedWelcomes[Math.floor(Math.random() * verifiedWelcomes.length)];
         
-        // Find general channel
-        const generalChannel = guild.channels.cache.find(c => 
-          c.name === 'general' || c.name === 'general-chat' || c.name === 'chat'
-        );
-        
-        if (generalChannel) {
-          const verifiedWelcomes = [
-            `*security systems deactivate* ${newMember} is now verified. Welcome to the REAL operation. Now go pick your roles in <#${rolesChannelId}> - we need to know what you're here for.`,
-            `${newMember} passed the vibe check. *unlocks the good channels* Now head to <#${rolesChannelId}> and tell us what you're grinding - Cayo? Wagons? Bounties?`,
-            `*stamps APPROVED on file* ${newMember} is officially one of us. Don't just stand there - grab your roles in <#${rolesChannelId}> so we know if you're a heister or a trader.`,
-            `Verification complete for ${newMember}. *opens the vault doors* Now the real question - what are you here for? Go to <#${rolesChannelId}> and pick your roles.`,
-            `${newMember} made it past my firewalls. Impressive. Now do us both a favor and select your roles in <#${rolesChannelId}> - GTA? RDO? Both? I need to update my files.`
-          ];
-          
-          const randomWelcome = verifiedWelcomes[Math.floor(Math.random() * verifiedWelcomes.length)];
-          
-          const embed = new EmbedBuilder()
-            .setTitle('🎮 Now Pick Your Roles!')
-            .setDescription(`
+        const embed = new EmbedBuilder()
+          .setTitle('🎮 Now Pick Your Roles!')
+          .setDescription(`
 **What are you here for?**
 
 🚗 **GTA Online**
@@ -2313,48 +2309,45 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
 > • Collector runs
 
 👉 **Click here → <#${rolesChannelId}>**
-            `)
-            .setColor(0x00FF00)
-            .setFooter({ text: 'Select your roles so we can match you with the right crew!' });
-          
-          await generalChannel.send({ content: randomWelcome, embeds: [embed] });
-        }
+          `)
+          .setColor(0x00FF00)
+          .setFooter({ text: 'Select your roles so we can match you with the right crew!' });
         
-        // Also DM them
-        try {
-          const dmEmbed = new EmbedBuilder()
-            .setTitle('✅ You\'re Verified!')
-            .setDescription(`
+        await generalChannel.send({ content: randomWelcome, embeds: [embed] });
+      }
+      
+      // Also DM them
+      try {
+        const dmEmbed = new EmbedBuilder()
+          .setTitle('✅ You\'re Verified!')
+          .setDescription(`
 Welcome to the crew, **${newMember.user.username}**!
 
 Now that you're in, here's what to do next:
-            `)
-            .addFields(
-              {
-                name: '🎯 STEP 1: Pick Your Roles',
-                value: `Go to <#${rolesChannelId}> and select:\n• What games you play (GTA/RDO)\n• What platform (PS4/PS5/Xbox/PC)\n• What activities you like`,
-                inline: false
-              },
-              {
-                name: '🎮 STEP 2: Find Your Crew',
-                value: '• **#cayo-lfg** - GTA Cayo Perico heists\n• **#wagon-lfg** - RDO trader wagons\n• **#bounty-lfg** - RDO bounty hunting',
-                inline: false
-              },
-              {
-                name: '💰 STEP 3: Get Free Stuff',
-                value: 'Type `?daily` in **#casino** for free chips every day!\nGamble, compete on the leaderboard, flex on everyone.',
-                inline: false
-              }
-            )
-            .setColor(0x00FF00)
-            .setFooter({ text: 'The Unpatched Method • Let\'s get this money' });
-          
-          await newMember.send({ embeds: [dmEmbed] });
-        } catch (e) {
-          // DMs disabled
-        }
+          `)
+          .addFields(
+            {
+              name: '🎯 STEP 1: Pick Your Roles',
+              value: `Go to <#${rolesChannelId}> and select:\n• What games you play (GTA/RDO)\n• What platform (PS4/PS5/Xbox/PC)\n• What activities you like`,
+              inline: false
+            },
+            {
+              name: '🎮 STEP 2: Find Your Crew',
+              value: '• **#cayo-lfg** - GTA Cayo Perico heists\n• **#wagon-lfg** - RDO trader wagons\n• **#bounty-lfg** - RDO bounty hunting',
+              inline: false
+            },
+            {
+              name: '💰 STEP 3: Get Free Stuff',
+              value: 'Type `?daily` in **#casino** for free chips every day!\nGamble, compete on the leaderboard, flex on everyone.',
+              inline: false
+            }
+          )
+          .setColor(0x00FF00)
+          .setFooter({ text: 'The Unpatched Method • Let\'s get this money' });
         
-        break; // Only trigger once
+        await newMember.send({ embeds: [dmEmbed] });
+      } catch (e) {
+        // DMs disabled
       }
     }
   } catch (e) {
