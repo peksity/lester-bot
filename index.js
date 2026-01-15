@@ -2278,6 +2278,9 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
         // They just verified! Welcome them properly
         const guild = newMember.guild;
         
+        // Roles channel ID
+        const rolesChannelId = '1453304724681134163';
+        
         // Find general channel
         const generalChannel = guild.channels.cache.find(c => 
           c.name === 'general' || c.name === 'general-chat' || c.name === 'chat'
@@ -2285,11 +2288,11 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
         
         if (generalChannel) {
           const verifiedWelcomes = [
-            `*security systems deactivate* ${newMember} is now verified. Welcome to the REAL operation. Now go pick your roles - we need to know what you're here for.`,
-            `${newMember} passed the vibe check. *unlocks the good channels* Now head to #roles and tell us what you're grinding - Cayo? Wagons? Bounties?`,
-            `*stamps APPROVED on file* ${newMember} is officially one of us. Don't just stand there - grab your roles so we know if you're a heister or a trader.`,
-            `Verification complete for ${newMember}. *opens the vault doors* Now the real question - what are you here for? Go pick your roles.`,
-            `${newMember} made it past my firewalls. Impressive. Now do us both a favor and select your roles - GTA? RDO? Both? I need to update my files.`
+            `*security systems deactivate* ${newMember} is now verified. Welcome to the REAL operation. Now go pick your roles in <#${rolesChannelId}> - we need to know what you're here for.`,
+            `${newMember} passed the vibe check. *unlocks the good channels* Now head to <#${rolesChannelId}> and tell us what you're grinding - Cayo? Wagons? Bounties?`,
+            `*stamps APPROVED on file* ${newMember} is officially one of us. Don't just stand there - grab your roles in <#${rolesChannelId}> so we know if you're a heister or a trader.`,
+            `Verification complete for ${newMember}. *opens the vault doors* Now the real question - what are you here for? Go to <#${rolesChannelId}> and pick your roles.`,
+            `${newMember} made it past my firewalls. Impressive. Now do us both a favor and select your roles in <#${rolesChannelId}> - GTA? RDO? Both? I need to update my files.`
           ];
           
           const randomWelcome = verifiedWelcomes[Math.floor(Math.random() * verifiedWelcomes.length)];
@@ -2309,7 +2312,7 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
 > • Bounty hunting  
 > • Collector runs
 
-Head to **#roles** and select what you play!
+👉 **Click here → <#${rolesChannelId}>**
             `)
             .setColor(0x00FF00)
             .setFooter({ text: 'Select your roles so we can match you with the right crew!' });
@@ -2329,7 +2332,7 @@ Now that you're in, here's what to do next:
             .addFields(
               {
                 name: '🎯 STEP 1: Pick Your Roles',
-                value: 'Go to **#roles** and select:\n• What games you play (GTA/RDO)\n• What platform (PS4/PS5/Xbox/PC)\n• What activities you like',
+                value: `Go to <#${rolesChannelId}> and select:\n• What games you play (GTA/RDO)\n• What platform (PS4/PS5/Xbox/PC)\n• What activities you like`,
                 inline: false
               },
               {
