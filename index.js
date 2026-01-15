@@ -3093,6 +3093,18 @@ client.on(Events.GuildMemberAdd, async (member) => {
     // DM WELCOME - Send private welcome message with VERIFICATION
     // ═══════════════════════════════════════════════════════════════
     try {
+      // Find verify channel to make it clickable
+      const verifyChannel = guild.channels.cache.find(c => 
+        c.name === 'verify' || c.name === 'verification' || c.name === '✅-verify'
+      );
+      const verifyLink = verifyChannel ? `<#${verifyChannel.id}>` : '#verify';
+      
+      // Find roles channel
+      const rolesChannel = guild.channels.cache.find(c => 
+        c.name === 'roles' || c.name === 'get-roles' || c.name === 'self-roles'
+      );
+      const rolesLink = rolesChannel ? `<#${rolesChannel.id}>` : '#roles';
+      
       const verifyEmbed = new EmbedBuilder()
         .setTitle('⚠️ IMPORTANT: VERIFY YOURSELF ⚠️')
         .setDescription(`
@@ -3105,7 +3117,7 @@ Hey **${member.user.username}**, welcome to **The Unpatched Method**.
         .addFields(
           {
             name: '✅ HOW TO VERIFY',
-            value: '```\n1. Go to #verify channel\n2. Click the ✅ button\n3. That\'s it - you\'re in!\n```',
+            value: `**1.** Click here → ${verifyLink}\n**2.** Click the ✅ button\n**3.** That's it - you're in!`,
             inline: false
           },
           {
