@@ -2316,39 +2316,7 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
         await generalChannel.send({ content: randomWelcome, embeds: [embed] });
       }
       
-      // Also DM them
-      try {
-        const dmEmbed = new EmbedBuilder()
-          .setTitle('✅ You\'re Verified!')
-          .setDescription(`
-Welcome to the crew, **${newMember.user.username}**!
-
-Now that you're in, here's what to do next:
-          `)
-          .addFields(
-            {
-              name: '🎯 STEP 1: Pick Your Roles',
-              value: `Go to <#${rolesChannelId}> and select:\n• What games you play (GTA/RDO)\n• What platform (PS4/PS5/Xbox/PC)\n• What activities you like`,
-              inline: false
-            },
-            {
-              name: '🎮 STEP 2: Find Your Crew',
-              value: '• **#cayo-lfg** - GTA Cayo Perico heists\n• **#wagon-lfg** - RDO trader wagons\n• **#bounty-lfg** - RDO bounty hunting',
-              inline: false
-            },
-            {
-              name: '💰 STEP 3: Get Free Stuff',
-              value: 'Type `?daily` in **#casino** for free chips every day!\nGamble, compete on the leaderboard, flex on everyone.',
-              inline: false
-            }
-          )
-          .setColor(0x00FF00)
-          .setFooter({ text: 'The Unpatched Method • Let\'s get this money' });
-        
-        await newMember.send({ embeds: [dmEmbed] });
-      } catch (e) {
-        // DMs disabled
-      }
+      // DMs are now handled by Burner Phone bot
     }
   } catch (e) {
     console.error('Verification welcome error:', e.message);
@@ -3086,60 +3054,6 @@ client.on(Events.GuildMemberAdd, async (member) => {
     }
     
     // DMs are now handled by Burner Phone bot
-    
-  } catch (error) {
-    console.error('[WELCOME] Error:', error.message);
-  }
-});
-            value: '• You can\'t see channels\n• You can\'t chat\n• You can\'t join LFG\n• You\'re basically invisible',
-            inline: true
-          },
-          {
-            name: '✅ AFTER VERIFICATION',
-            value: '• Full server access\n• LFG for heists & wagons\n• Talk to our AI bots\n• Join the community',
-            inline: true
-          }
-        )
-        .setColor(0xFF0000)
-        .setFooter({ text: '⚠️ VERIFY FIRST - THEN READ BELOW ⚠️' })
-        .setTimestamp();
-
-      const infoEmbed = new EmbedBuilder()
-        .setTitle('🎮 Welcome to The Unpatched Method!')
-        .setDescription(`
-Once you're verified, here's what you need to know:
-        `)
-        .addFields(
-          { 
-            name: '📋 Get Started', 
-            value: '• Check out the rules\n• Grab some roles\n• Introduce yourself', 
-            inline: true 
-          },
-          { 
-            name: '🎯 LFG Channels', 
-            value: '• **#cayo-lfg** - GTA Heists\n• **#wagon-lfg** - RDO Trading\n• **#bounty-lfg** - RDO Bounties', 
-            inline: true 
-          },
-          { 
-            name: '🤖 Talk to the Bots', 
-            value: '• **#talk-to-lester** - That\'s me\n• **#talk-to-pavel** - Heist help\n• **#casino** - Gamble chips', 
-            inline: false 
-          },
-          {
-            name: '💡 Pro Tip',
-            value: 'Type `?daily` in #casino to get free chips every day. Don\'t tell anyone I told you.',
-            inline: false
-          }
-        )
-        .setColor(0xFF6B35)
-        .setThumbnail(guild.iconURL({ dynamic: true }))
-        .setFooter({ text: 'The Unpatched Method • Welcome to the crew' });
-      
-      await member.send({ content: '# 🚨 READ THIS FIRST 🚨', embeds: [verifyEmbed, infoEmbed] });
-    } catch (dmError) {
-      // User has DMs disabled, that's fine
-      console.log(`[WELCOME] Could not DM ${member.user.username} - DMs disabled`);
-    }
     
   } catch (error) {
     console.error('[WELCOME] Error:', error.message);
