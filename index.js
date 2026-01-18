@@ -3085,39 +3085,12 @@ client.on(Events.GuildMemberAdd, async (member) => {
       await generalChannel.send(welcomeText);
     }
     
-    // ═══════════════════════════════════════════════════════════════
-    // DM WELCOME - Send private welcome message with VERIFICATION
-    // ═══════════════════════════════════════════════════════════════
-    try {
-      // Find verify channel to make it clickable
-      const verifyChannel = guild.channels.cache.find(c => 
-        c.name === 'verify' || c.name === 'verification' || c.name === '✅-verify'
-      );
-      const verifyLink = verifyChannel ? `<#${verifyChannel.id}>` : '#verify';
-      
-      // Find roles channel
-      const rolesChannel = guild.channels.cache.find(c => 
-        c.name === 'roles' || c.name === 'get-roles' || c.name === 'self-roles'
-      );
-      const rolesLink = rolesChannel ? `<#${rolesChannel.id}>` : '#roles';
-      
-      const verifyEmbed = new EmbedBuilder()
-        .setTitle('⚠️ IMPORTANT: VERIFY YOURSELF ⚠️')
-        .setDescription(`
-# 🚨 YOU MUST VERIFY TO ACCESS THE SERVER 🚨
-
-Hey **${member.user.username}**, welcome to **The Unpatched Method**.
-
-**Before you can see any channels, you NEED to verify.**
-        `)
-        .addFields(
-          {
-            name: '✅ HOW TO VERIFY',
-            value: `**1.** Click here → ${verifyLink}\n**2.** Click the ✅ button\n**3.** That's it - you're in!`,
-            inline: false
-          },
-          {
-            name: '❌ WITHOUT VERIFICATION',
+    // DMs are now handled by Burner Phone bot
+    
+  } catch (error) {
+    console.error('[WELCOME] Error:', error.message);
+  }
+});
             value: '• You can\'t see channels\n• You can\'t chat\n• You can\'t join LFG\n• You\'re basically invisible',
             inline: true
           },
