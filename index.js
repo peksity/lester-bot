@@ -661,6 +661,149 @@ client.on(Events.MessageCreate, async (message) => {
     return; // Silently ignore
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // AUTOMATIC LINK SCANNING & SCAM DETECTION
+  // ═══════════════════════════════════════════════════════════════
+  const SCAM_ALERT_CHANNEL = '1453304821842051104';
+  
+  // Extract links from message
+  const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
+  const links = message.content.match(urlRegex) || [];
+  
+  if (links.length > 0) {
+    // Known scam patterns
+    const SCAM_PATTERNS = [
+      /free\s*nitro/i, /discord\s*nitro\s*gift/i, /steam\s*gift/i,
+      /click\s*here\s*to\s*claim/i, /you\s*have\s*been\s*selected/i,
+      /won\s*a?\s*prize/i, /verify\s*your\s*account\s*at/i,
+      /suspicious\s*activity/i, /account\s*will\s*be\s*terminated/i,
+      /login\s*to\s*verify/i, /discord\.gift/i, /discordgift/i
+    ];
+    
+    const SUSPICIOUS_DOMAINS = [
+      'bit.ly', 'tinyurl.com', 'shorturl.at', 'rb.gy',
+      'dlscord.com', 'discorcl.com', 'disc0rd.com',
+      'steamcommunlty.com', 'steampowered.ru', 'dlscord', 'disc0rd'
+    ];
+    
+    let isScam = false;
+    let threats = [];
+    
+    // Check message content for scam patterns
+    for (const pattern of SCAM_PATTERNS) {
+      if (pattern.test(message.content)) {
+        isScam = true;
+        threats.push(`Scam pattern: ${pattern.toString()}`);
+      }
+    }
+    
+    // Check each link
+    for (const link of links) {
+      try {
+        const domain = new URL(link).hostname.toLowerCase();
+        
+        // Check suspicious domains
+        for (const suspicious of SUSPICIOUS_DOMAINS) {
+          if (domain.includes(suspicious)) {
+            isScam = true;
+            threats.push(`Suspicious domain: ${suspicious}`);
+          }
+        }
+        
+        // Check for Discord impersonation
+        if (domain.includes('discord') && !domain.includes('discord.com') && !domain.includes('discord.gg') && !domain.includes('discordapp.com')) {
+          isScam = true;
+          threats.push(`Fake Discord domain: ${domain}`);
+        }
+        
+        // Check for Steam impersonation  
+        if (domain.includes('steam') && !domain.includes('steampowered.com') && !domain.includes('steamcommunity.com')) {
+          isScam = true;
+          threats.push(`Fake Steam domain: ${domain}`);
+        }
+        
+        // VirusTotal scan if API key exists
+        if (process.env.VIRUSTOTAL_API_KEY && !isScam) {
+          try {
+            const submitResponse = await fetch('https://www.virustotal.com/api/v3/urls', {
+              method: 'POST',
+              headers: {
+                'x-apikey': process.env.VIRUSTOTAL_API_KEY,
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: `url=${encodeURIComponent(link)}`
+            });
+            const submitData = await submitResponse.json();
+            const analysisId = submitData.data?.id;
+            
+            if (analysisId) {
+              await new Promise(r => setTimeout(r, 2000));
+              const resultResponse = await fetch(`https://www.virustotal.com/api/v3/analyses/${analysisId}`, {
+                headers: { 'x-apikey': process.env.VIRUSTOTAL_API_KEY }
+              });
+              const resultData = await resultResponse.json();
+              const stats = resultData.data?.attributes?.stats || {};
+              
+              if (stats.malicious > 0) {
+                isScam = true;
+                threats.push(`VirusTotal: ${stats.malicious} vendors flagged as malicious`);
+              }
+              if (stats.suspicious > 2) {
+                threats.push(`VirusTotal: ${stats.suspicious} vendors flagged as suspicious`);
+              }
+            }
+          } catch (vtError) {
+            console.log('[LESTER] VirusTotal scan error:', vtError.message);
+          }
+        }
+      } catch (e) {
+        // Invalid URL, skip
+      }
+    }
+    
+    // If scam detected, alert and delete
+    if (isScam) {
+      try {
+        // Delete the message
+        await message.delete();
+        
+        // Alert in scam detection channel
+        const alertChannel = message.guild.channels.cache.get(SCAM_ALERT_CHANNEL);
+        if (alertChannel) {
+          const alertEmbed = new EmbedBuilder()
+            .setTitle('🚨 SCAM/PHISHING DETECTED')
+            .setDescription(`**User:** ${message.author} (${message.author.tag})\n**Channel:** ${message.channel}\n**Message deleted automatically**`)
+            .addFields(
+              { name: '📝 Message Content', value: message.content.slice(0, 1024) || 'N/A', inline: false },
+              { name: '🔗 Links Found', value: links.join('\n').slice(0, 1024), inline: false },
+              { name: '⚠️ Threats Detected', value: threats.join('\n').slice(0, 1024) || 'Pattern match', inline: false }
+            )
+            .setColor(0xFF0000)
+            .setThumbnail(message.author.displayAvatarURL())
+            .setTimestamp()
+            .setFooter({ text: 'Lester Security • Auto-Detection' });
+          
+          await alertChannel.send({ content: '@here', embeds: [alertEmbed] });
+        }
+        
+        // DM the user
+        try {
+          await message.author.send({
+            embeds: [new EmbedBuilder()
+              .setTitle('⚠️ Message Removed')
+              .setDescription(`Your message in **${message.guild.name}** was removed because it contained a potential scam or phishing link.\n\nIf you believe this was a mistake, contact staff.`)
+              .setColor(0xFF0000)
+            ]
+          });
+        } catch (e) {}
+        
+        return; // Don't process further
+      } catch (e) {
+        console.log('[LESTER] Error handling scam:', e.message);
+      }
+    }
+  }
+
   const channelName = message.channel.name;
 
   // Handle counting channel - process the count!
