@@ -1,22 +1,7 @@
 /**
- * SETUP HANDLER - THE UNPATCHED METHOD
+ * SETUP HANDLER
  * Creates the ENTIRE server structure automatically
- * 
- * 🎮 271 FEATURES INCLUDING:
- * - Advanced LFG Systems (Cayo, Wagon, Bounty) with dropdowns
- * - Activity XP System with 17 progression roles
- * - Time-based progression (Fresh Spawn → Method Finder)
- * - Role-gated channel visibility
- * - PS4/PS5 conflict detection
- * - Verification with channel hiding
- * - VIP/Booster perks
- * - 14 logging channels
- * - Counting game with bot protection
- * 
- * Commands:
- * - ?setup - Creates entire server structure
- * - ?nuke - Deletes EVERYTHING (owner only)
- * - ?reset - Deletes only bot-created content
+ * Categories, channels, roles, permissions - EVERYTHING
  */
 
 const { 
@@ -25,8 +10,7 @@ const {
   ChannelType,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle,
-  StringSelectMenuBuilder
+  ButtonStyle
 } = require('discord.js');
 
 // ============================================
@@ -35,187 +19,112 @@ const {
 
 const SERVER_STRUCTURE = {
   roles: [
-    // Staff Roles (highest) - Admin perms
-    { name: '👑 Owner', color: '#FFD700', permissions: 'ADMIN', hoist: true },
+    // Staff Roles (highest)
     { name: '🧠 Mastermind', color: '#FF0000', permissions: 'ADMIN', hoist: true },
     { name: '🔫 Enforcer', color: '#FF4500', permissions: 'ADMIN', hoist: true },
     { name: '🤠 Deputy', color: '#FFA500', permissions: 'MOD', hoist: true },
     { name: '🔧 Mechanic', color: '#00CED1', permissions: 'MOD', hoist: true },
     
-    // VIP/Booster Role (special - above bots)
-    { name: '💜 VIP', color: '#FF73FA', permissions: 'MEMBER', hoist: true },
-    
-    // Bot Roles
-    { name: 'Lester', color: '#FFA500', permissions: 'BOT', hoist: true },
+    // Bot Roles (right under staff, admin perms, hoisted)
+    { name: 'Lester', color: '#FFD700', permissions: 'BOT', hoist: true },
     { name: 'Pavel', color: '#FFD700', permissions: 'BOT', hoist: true },
-    { name: 'Cripps', color: '#8B4513', permissions: 'BOT', hoist: true },
-    { name: 'Madam Nazar', color: '#9B59B6', permissions: 'BOT', hoist: true },
-    { name: 'Police Chief', color: '#C0392B', permissions: 'BOT', hoist: true },
+    { name: 'Cripps', color: '#FFD700', permissions: 'BOT', hoist: true },
+    { name: 'Madam Nazar', color: '#FFD700', permissions: 'BOT', hoist: true },
+    { name: 'Police Chief', color: '#FFD700', permissions: 'BOT', hoist: true },
     
-    // Special Achievement Roles
-    { name: '🏆 The #1', color: '#FFD700', permissions: 'MEMBER', hoist: true },
-    { name: '🎖️ Veteran Grinder', color: '#DAA520', permissions: 'MEMBER', hoist: true },  // 500+ total
-    { name: '🌟 Helping Hand', color: '#FF69B4', permissions: 'MEMBER', hoist: true },     // 50+ helper sessions
-    { name: '🔥 On Fire', color: '#FF4500', permissions: 'MEMBER', hoist: false },         // 10 in 24hrs
-    
-    // GTA Cayo Activity Ranks
-    { name: '👑 El Rubio\'s Nightmare', color: '#FFD700', permissions: 'MEMBER', hoist: true },  // 100 cayo
-    { name: '🐋 Whale Hunter', color: '#0097A7', permissions: 'MEMBER', hoist: true },           // 50 cayo
-    { name: '🦈 Shark Card Killer', color: '#00CED1', permissions: 'MEMBER', hoist: false },     // 25 cayo
-    { name: '🐟 Small Fry', color: '#87CEEB', permissions: 'MEMBER', hoist: false },             // 5 cayo
-    
-    // RDO Wagon Activity Ranks
-    { name: '🏰 Cripps\' Partner', color: '#8B4513', permissions: 'MEMBER', hoist: true },  // 100 wagon
-    { name: '🚚 Trade Baron', color: '#A0522D', permissions: 'MEMBER', hoist: true },       // 50 wagon
-    { name: '🛒 Supply Runner', color: '#CD853F', permissions: 'MEMBER', hoist: false },    // 25 wagon
-    { name: '📦 Delivery Boy', color: '#D2691E', permissions: 'MEMBER', hoist: false },     // 5 wagon
-    
-    // RDO Bounty Activity Ranks
-    { name: '💀 Grim Reaper', color: '#4A0000', permissions: 'MEMBER', hoist: true },   // 100 bounty
-    { name: '⚔️ Manhunter', color: '#8B0000', permissions: 'MEMBER', hoist: true },     // 50 bounty
-    { name: '🎯 Sharpshooter', color: '#B22222', permissions: 'MEMBER', hoist: false }, // 25 bounty
-    { name: '🔫 Rookie Hunter', color: '#DC143C', permissions: 'MEMBER', hoist: false }, // 5 bounty
-    
-    // Verified Role - Base access after verification
+    // Verified Role - Required to see channels
     { name: '✅ Verified', color: '#2ECC71', permissions: 'VERIFIED', hoist: false },
     
-    // Time-Based Progression Roles
-    { name: '💎 Method Finder', color: '#E91E63', permissions: 'MEMBER', hoist: true },    // 90+ days
-    { name: '🏆 Glitch Veteran', color: '#9C27B0', permissions: 'MEMBER', hoist: true },   // 30+ days
-    { name: '⭐ Patched In', color: '#4CAF50', permissions: 'MEMBER', hoist: false },      // 7+ days - unlocks clips
-    { name: '🆕 Fresh Spawn', color: '#607D8B', permissions: 'MEMBER', hoist: false },     // 0-7 days
+    // Special Roles
+    { name: '🏆 The #1', color: '#FFD700', permissions: 'MEMBER', hoist: true },
     
-    // GAME ROLES - These unlock categories
-    { name: '💰 Los Santos Hustler', color: '#2ECC71', permissions: 'MEMBER', hoist: false }, // Unlocks GTA
-    { name: '🐴 Frontier Outlaw', color: '#8B4513', permissions: 'MEMBER', hoist: false },    // Unlocks RDO
+    // Activity/Trust Roles
+    { name: '💎 Method Finder', color: '#E91E63', permissions: 'MEMBER', hoist: true },
+    { name: '🏆 Glitch Veteran', color: '#9C27B0', permissions: 'MEMBER', hoist: true },
+    { name: '⭐ Patched In', color: '#4CAF50', permissions: 'MEMBER', hoist: false },
+    { name: '🆕 Fresh Spawn', color: '#607D8B', permissions: 'MEMBER', hoist: false },
     
-    // Platform Roles
+    // Game Roles
+    { name: '💰 Los Santos Hustler', color: '#4CAF50', permissions: 'MEMBER', hoist: false },
+    { name: '🐴 Frontier Outlaw', color: '#8B4513', permissions: 'MEMBER', hoist: false },
+    
+    // Platform Roles - Primary shown above regular (for dual-console users)
     { name: '⭐ Primary: PS5', color: '#00D4FF', permissions: 'MEMBER', hoist: true },
-    { name: '⭐ Primary: PS4', color: '#00BFFF', permissions: 'MEMBER', hoist: true },
-    { name: '🎮 PlayStation 5', color: '#003087', permissions: 'MEMBER', hoist: false },
-    { name: '🎮 PlayStation 4', color: '#003087', permissions: 'MEMBER', hoist: false },
+    { name: '⭐ Primary: PS4', color: '#00D4FF', permissions: 'MEMBER', hoist: true },
+    { name: '🎮 PlayStation 5', color: '#003087', permissions: 'MEMBER', hoist: true },
+    { name: '🎮 PlayStation 4', color: '#003087', permissions: 'MEMBER', hoist: true },
     
-    // LFG Ping Roles - These unlock specific channels
-    { name: '🏝️ Cayo Grinder', color: '#00BCD4', permissions: 'MEMBER', hoist: false },   // Unlocks cayo-lfg, talk-to-pavel
-    { name: '🛞 Wagon Runner', color: '#795548', permissions: 'MEMBER', hoist: false },   // Unlocks wagon-lfg, talk-to-cripps
-    { name: '💀 Bounty Hunter', color: '#F44336', permissions: 'MEMBER', hoist: false },  // Unlocks bounty-lfg, talk-to-police-chief
+    // Ping Roles
+    { name: '🏝️ Cayo Grinder', color: '#00BCD4', permissions: 'MEMBER', hoist: false },
+    { name: '🚁 Heist Crew', color: '#FF9800', permissions: 'MEMBER', hoist: false },
+    { name: '🛞 Wagon Runner', color: '#795548', permissions: 'MEMBER', hoist: false },
+    { name: '💀 Bounty Hunter', color: '#F44336', permissions: 'MEMBER', hoist: false },
     
     // Muted Role (lowest)
-    { name: 'Muted', color: '#000000', permissions: 'MUTED', hoist: false },
-    
-    // ========== ACTIVITY XP ROLES ==========
-    // Overall XP Ranks
-    { name: '💫 Community Legend', color: '#E74C3C', permissions: 'MEMBER', hoist: true },   // 50,000 XP
-    { name: '🌟 Server Star', color: '#F39C12', permissions: 'MEMBER', hoist: true },        // 10,000 XP
-    { name: '🌳 Rooted Regular', color: '#16A085', permissions: 'MEMBER', hoist: false },    // 2,500 XP
-    { name: '🌿 Growing Member', color: '#2ECC71', permissions: 'MEMBER', hoist: false },    // 500 XP
-    { name: '🌱 Active Seed', color: '#27AE60', permissions: 'MEMBER', hoist: false },       // 100 XP
-    
-    // Message Ranks
-    { name: '👑 Legendary Talker', color: '#9B59B6', permissions: 'MEMBER', hoist: true },   // 25,000 messages
-    { name: '📢 Server Voice', color: '#1ABC9C', permissions: 'MEMBER', hoist: true },       // 10,000 messages
-    { name: '🗣️ Conversation Starter', color: '#2980B9', permissions: 'MEMBER', hoist: false }, // 2,500 messages
-    { name: '💬 Chatterbox', color: '#3498DB', permissions: 'MEMBER', hoist: false },        // 500 messages
-    
-    // Voice Ranks
-    { name: '🔊 Voice Lord', color: '#8E44AD', permissions: 'MEMBER', hoist: true },         // 100 hours
-    { name: '🎤 Party Animal', color: '#C0392B', permissions: 'MEMBER', hoist: true },       // 50 hours
-    { name: '🎧 Voice Regular', color: '#E74C3C', permissions: 'MEMBER', hoist: false },     // 10 hours
-    
-    // Special Activity Roles
-    { name: '🦉 Night Owl', color: '#34495E', permissions: 'MEMBER', hoist: false },         // Active 12am-6am
-    { name: '🐦 Early Bird', color: '#F1C40F', permissions: 'MEMBER', hoist: false },        // Active 5am-9am
-    { name: '⚔️ Weekend Warrior', color: '#E67E22', permissions: 'MEMBER', hoist: false },   // Weekend activity
-    { name: '🔥 Streak Master', color: '#FF6B6B', permissions: 'MEMBER', hoist: false },     // 30 day streak
-    { name: '👍 Reaction King', color: '#FF69B4', permissions: 'MEMBER', hoist: false }      // 1000+ reactions
+    { name: 'Muted', color: '#000000', permissions: 'MUTED', hoist: false }
   ],
   
   categories: [
-    // Voice Channels at top (no category)
-    
-    // SERVER STATS - Visible to verified
     {
       name: '📊 SERVER STATS',
-      permissions: 'verified-category',
       channels: [
-        { name: '👥 Members: 0', type: 'voice', permissions: 'stats' },
-        { name: '🟢 Online: 0', type: 'voice', permissions: 'stats' },
-        { name: '🤖 Bots: 5', type: 'voice', permissions: 'stats' }
+        { name: '👥 Members: 0', type: 'voice', permissions: 'verified-stats' },
+        { name: '🟢 Online: 0', type: 'voice', permissions: 'verified-stats' },
+        { name: '🤖 Bots: 5', type: 'voice', permissions: 'verified-stats' }
       ]
     },
-    
-    // INFO - Mixed visibility
     {
       name: '📌 INFO',
-      permissions: 'public-category',
       channels: [
-        { name: 'welcome', type: 'text', permissions: 'unverified-only' },        // Hidden after verify
-        { name: 'verify', type: 'text', permissions: 'unverified-only-react' },   // Hidden after verify
-        { name: 'rules', type: 'text', permissions: 'public-readonly' },          // Always visible
-        { name: 'about-us', type: 'text', permissions: 'public-readonly' },       // Always visible
-        { name: 'announcements', type: 'text', permissions: 'verified-readonly' },
-        { name: 'role-info', type: 'text', permissions: 'verified-readonly' },    // Only after verify
-        { name: 'role-unlocks', type: 'text', permissions: 'verified-readonly' }, // Only after verify
-        { name: 'roles', type: 'text', permissions: 'verified-react' },           // Only after verify
-        { name: 'bot-commands', type: 'text', permissions: 'game-role-readonly' }
+        { name: 'welcome', type: 'text', permissions: 'public-readonly' },
+        { name: 'verify', type: 'text', permissions: 'public-readonly' },
+        { name: 'rules', type: 'text', permissions: 'public-readonly' },
+        { name: 'roles', type: 'text', permissions: 'verified-react' },
+        { name: 'bot-commands', type: 'text', permissions: 'verified-readonly' }
       ]
     },
-    
-    // GENERAL - Visible to verified
     {
       name: '💬 GENERAL',
-      permissions: 'verified-category',
       channels: [
         { name: 'general-chat', type: 'text', permissions: 'verified' },
-        { name: 'vip-lounge', type: 'text', permissions: 'vip-only' },         // VIP/Boosters only
-        { name: 'clips', type: 'text', permissions: 'patched-in-only' },       // 7+ days only
-        { name: 'memes', type: 'text', permissions: 'verified' },
         { name: 'counting', type: 'text', permissions: 'verified-counting' },
+        { name: 'clips', type: 'text', permissions: 'verified' },
+        { name: 'memes', type: 'text', permissions: 'verified' },
         { name: 'General Voice', type: 'voice', permissions: 'verified' }
       ]
     },
-    
-    // GTA ONLINE - Only visible with 💰 Los Santos Hustler role
     {
-      name: '💰 GTA 5 ONLINE',
-      permissions: 'gta-category',
+      name: '💰 GTA ONLINE',
       channels: [
-        { name: 'gun-van', type: 'text', permissions: 'gta-readonly' },
-        { name: 'cayo-lfg', type: 'text', permissions: 'cayo-only' },        // Only 🏝️ Cayo Grinder
-        { name: 'gta-chat', type: 'text', permissions: 'gta-only' },
-        { name: 'talk-to-lester', type: 'text', permissions: 'gta-only' },
-        { name: 'talk-to-pavel', type: 'text', permissions: 'cayo-only' },   // Only 🏝️ Cayo Grinder
-        { name: 'GTA Voice', type: 'voice', permissions: 'gta-only' }
+        { name: 'gun-van', type: 'text', permissions: 'verified-readonly' },
+        { name: 'cayo-lfg', type: 'text', permissions: 'verified' },
+        { name: 'gta-chat', type: 'text', permissions: 'verified' },
+        { name: 'talk-to-lester', type: 'text', permissions: 'verified' },
+        { name: 'talk-to-pavel', type: 'text', permissions: 'verified' },
+        { name: 'GTA Voice', type: 'voice', permissions: 'verified' }
       ]
     },
-    
-    // RED DEAD ONLINE - Only visible with 🐴 Frontier Outlaw role
     {
-      name: '🤠 RED DEAD 2 ONLINE',
-      permissions: 'rdo-category',
+      name: '🤠 RED DEAD ONLINE',
       channels: [
-        { name: 'madam-nazar', type: 'text', permissions: 'rdo-readonly' },
-        { name: 'wagon-lfg', type: 'text', permissions: 'wagon-only' },          // Only 🛞 Wagon Runner
-        { name: 'bounty-lfg', type: 'text', permissions: 'bounty-only' },        // Only 💀 Bounty Hunter
-        { name: 'rdo-chat', type: 'text', permissions: 'rdo-only' },
-        { name: 'talk-to-cripps', type: 'text', permissions: 'wagon-only' },     // Only 🛞 Wagon Runner
-        { name: 'talk-to-madam', type: 'text', permissions: 'rdo-only' },
-        { name: 'talk-to-police-chief', type: 'text', permissions: 'bounty-only' }, // Only 💀 Bounty Hunter
-        { name: 'RDO Voice', type: 'voice', permissions: 'rdo-only' }
+        { name: 'madam-nazar', type: 'text', permissions: 'verified-readonly' },
+        { name: 'wagon-lfg', type: 'text', permissions: 'verified' },
+        { name: 'bounty-lfg', type: 'text', permissions: 'verified' },
+        { name: 'rdo-chat', type: 'text', permissions: 'verified' },
+        { name: 'talk-to-cripps', type: 'text', permissions: 'verified' },
+        { name: 'talk-to-madam', type: 'text', permissions: 'verified' },
+        { name: 'talk-to-police-chief', type: 'text', permissions: 'verified' },
+        { name: 'RDO Voice', type: 'voice', permissions: 'verified' }
       ]
     },
-    
-    // STAFF LOGS - Staff only
     {
       name: '🔒 STAFF LOGS',
-      permissions: 'staff-category',
       channels: [
         { name: 'nexus-log', type: 'text', permissions: 'staff-only' },
         { name: 'mod-actions', type: 'text', permissions: 'staff-only' },
         { name: 'message-logs', type: 'text', permissions: 'staff-only' },
         { name: 'bot-actions', type: 'text', permissions: 'staff-only' },
         { name: 'join-leave', type: 'text', permissions: 'staff-only' },
-        { name: 'verified-log', type: 'text', permissions: 'staff-only' },
         { name: 'voice-logs', type: 'text', permissions: 'staff-only' },
         { name: 'role-changes', type: 'text', permissions: 'staff-only' },
         { name: 'nickname-logs', type: 'text', permissions: 'staff-only' },
@@ -226,11 +135,8 @@ const SERVER_STRUCTURE = {
         { name: 'transcripts', type: 'text', permissions: 'staff-only' }
       ]
     },
-    
-    // STAFF - Staff only
     {
       name: '👑 STAFF',
-      permissions: 'staff-category',
       channels: [
         { name: 'staff-chat', type: 'text', permissions: 'staff-only' },
         { name: 'staff-commands', type: 'text', permissions: 'staff-only' },
@@ -265,7 +171,7 @@ Make money FAST in GTA Online and Red Dead Online. No bullshit - just efficient 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 **🤖 THE BOTS**
-All 5 bots are AI-powered and chat freely in the server. They help, they joke, they have opinions. Just talk to them.
+All 6 bots are AI-powered and chat freely in the server. They help, they joke, they have opinions. Just talk to them.
 
 **🔔 LFG SYSTEM**
 Find crew members instantly for any activity with the LFG commands.
@@ -273,8 +179,8 @@ Find crew members instantly for any activity with the LFG commands.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 **GET STARTED:**
-1️⃣ Verify in #verify
-2️⃣ Grab your roles in #roles
+1️⃣ Read the rules
+2️⃣ Grab your roles
 3️⃣ Find a crew
 4️⃣ Start grinding`,
   color: 0x2F3136
@@ -327,198 +233,26 @@ We're here to grind and have a good time. Don't ruin it for everyone else.
 // ============================================
 const ROLE_SELECTION = {
   title: '🎮 Pick Your Roles',
-  description: `**React to get your roles. Channels unlock based on your selections!**
+  description: `**React to get your roles:**
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**What do you play?**
+💰 - GTA Online
+🐴 - Red Dead Online
 
-**🎮 WHAT DO YOU PLAY?**
-💰 - **GTA Online** → Unlocks GTA channels
-🐴 - **Red Dead Online** → Unlocks RDO channels
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**📱 PLATFORM**
+**Platform?**
 5️⃣ - PlayStation 5
 4️⃣ - PlayStation 4
-*If you select both, Lester will DM you to pick your primary!*
+*If you have both, I'll DM you to ask which is your primary!*
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Ping me for:**
+🏝️ - Cayo Perico runs
+🚁 - Other Heists
+🛞 - Wagon deliveries
+💀 - Bounty hunting
 
-**🔔 PING ME FOR (Unlocks extra channels):**
-🏝️ - **Cayo Perico** → Unlocks cayo-lfg & talk-to-pavel
-🛞 - **Wagon Runs** → Unlocks wagon-lfg & talk-to-cripps
-💀 - **Bounty Hunting** → Unlocks bounty-lfg & talk-to-police-chief
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-*React below to get your roles!*`,
+*Pick what applies to you. You can have multiple.*`,
   color: 0x00FF00,
-  reactions: ['💰', '🐴', '5️⃣', '4️⃣', '🏝️', '🛞', '💀']
-};
-
-// ============================================
-// BOT COMMANDS - 271 FEATURES
-// ============================================
-const BOT_COMMANDS_MESSAGE = {
-  embeds: [
-    // Main Info Embed
-    {
-      title: '🤖 NEXUS AI-POWERED BOTS',
-      description: `**All 5 bots are powered by NEXUS - they understand natural language.**
-
-You don't need commands. Just talk naturally:
-• *"anyone wanna do cayo?"* → Creates LFG automatically
-• *"need help with wagon"* → Creates LFG automatically
-• *"where is nazar?"* → Shows location
-
-Commands still work if you prefer them. The bots also chat freely - they have real personalities. Just talk to them!
-
-**271 Features** • Every decision powered by AI`,
-      color: 0x5865F2
-    },
-    
-    // Lester
-    {
-      title: '🟠 Lester - The Mastermind',
-      description: `**Server Management & AI Moderation**
-Lester runs NEXUS moderation - he watches everything and handles problems automatically.`,
-      fields: [
-        { name: '💬 Chat', value: '#talk-to-lester - Talk to Lester anytime', inline: true },
-        { name: '🛡️ Moderation', value: 'Fully automatic. No commands needed.', inline: true },
-        { name: '🛠️ Utility Commands', value: '`?help` - Show commands\n`?ping` - Bot latency\n`?serverinfo` - Server stats\n`?userinfo @user` - User info', inline: false },
-        { name: '🔫 Gun Van', value: '`?gunvan` - Today\'s Gun Van location & stock', inline: true },
-        { name: '🔢 Counting', value: '`?countrecord` - View counting record', inline: true },
-        { name: '⚙️ Admin', value: '`?setup` - Server setup\n`?nuke` - Reset server', inline: true }
-      ],
-      color: 0xFFA500
-    },
-    
-    // Pavel
-    {
-      title: '🟡 Pavel - The Submarine Captain',
-      description: `**GTA Online Heist LFG**
-*"Ah, Kapitan! Let us make some money, yes?"*`,
-      fields: [
-        { name: '💬 Chat', value: '#talk-to-pavel - Talk to Pavel', inline: true },
-        { name: '📍 LFG Channel', value: '#cayo-lfg', inline: true },
-        { name: '🗣️ Natural Language', value: 'Just say *"anyone wanna do cayo?"* or *"need 2 for heist"* - Pavel understands!', inline: false },
-        { name: '🏝️ Advanced Cayo LFG', value: 
-          '`?cayo` - Opens interactive session creator:\n' +
-          '• Select primary target (💎 Pink Diamond, 📜 Bearer Bonds, etc.)\n' +
-          '• Choose approach (Drainage, Main Dock, Airstrip, etc.)\n' +
-          '• Toggle B2B mode on/off\n' +
-          '• Auto voice channel creation\n' +
-          '• Live payout tracking & run counter', inline: false },
-        { name: '📊 Reputation', value: '`?rep [@user]` - Check player reputation', inline: true },
-        { name: '🎤 Voice', value: 'Auto-created when you start a session!', inline: true }
-      ],
-      footer: { text: 'Dropdown menus • Platform matching • Earnings tracker' },
-      color: 0xFFD700
-    },
-    
-    // Cripps
-    {
-      title: '🟤 Cripps - The Old Trader',
-      description: `**Red Dead Online Wagon LFG**
-*"Did I ever tell you about the time I... never mind."*`,
-      fields: [
-        { name: '💬 Chat', value: '#talk-to-cripps - Talk to Cripps', inline: true },
-        { name: '📍 LFG Channel', value: '#wagon-lfg', inline: true },
-        { name: '🗣️ Natural Language', value: 'Just say *"need help with wagon"* or *"running deliveries"* - Cripps understands!', inline: false },
-        { name: '🛒 Advanced Wagon LFG', value: 
-          '`?wagon` - Opens interactive session creator:\n' +
-          '• Select delivery type (📍 Local / 🗺️ Distant)\n' +
-          '• Select wagon size (Small/Medium/Large)\n' +
-          '• Toggle dupe method (11 dupes per session)\n' +
-          '• Auto voice channel creation\n' +
-          '• Dupe counter & earnings tracker', inline: false },
-        { name: '📊 Reputation', value: '`?rep [@user]` - Check reputation', inline: true },
-        { name: '🎤 Voice', value: 'Auto-created when you start a session!', inline: true }
-      ],
-      footer: { text: 'Dropdown menus • Platform matching • Earnings tracker' },
-      color: 0x8B4513
-    },
-    
-    // Madam Nazar
-    {
-      title: '🟣 Madam Nazar - The Fortune Teller',
-      description: `**Daily Location & Collector Guide**
-*"The spirits have guided me here today..."*`,
-      fields: [
-        { name: '💬 Chat', value: '#talk-to-madam - Consult with Nazar', inline: true },
-        { name: '📍 Daily Post', value: '#madam-nazar', inline: true },
-        { name: '🗣️ Natural Language', value: 'Just ask *"where is nazar?"* or *"nazar location"* - she\'ll tell you!', inline: false },
-        { name: '📍 Location Commands', value: '`?nazar` - Today\'s location\n`?where` - Same thing', inline: false },
-        { name: '🗺️ Collector Map', value: '[Jean Ropke Map](https://jeanropke.github.io/RDR2CollectorsMap/) - Best tool for collectibles', inline: false }
-      ],
-      footer: { text: 'Location changes daily at midnight UTC' },
-      color: 0x9B59B6
-    },
-    
-    // Police Chief
-    {
-      title: '⭐ Police Chief - The Lawman',
-      description: `**Red Dead Online Bounty LFG**
-*"The law always needs good hunters."*`,
-      fields: [
-        { name: '💬 Chat', value: '#talk-to-police-chief - Talk to the Chief', inline: true },
-        { name: '📍 LFG Channel', value: '#bounty-lfg', inline: true },
-        { name: '🗣️ Natural Language', value: 'Just say *"anyone down for etta doyle?"* or *"need bounty crew"* - the Chief understands!', inline: false },
-        { name: '🎯 Advanced Bounty LFG', value: 
-          '`?bounty` - Opens interactive session creator:\n' +
-          '• Select bounty type (⭐ Regular / 🌟 Legendary / 💀 Infamous)\n' +
-          '• Choose legendary targets (Etta Doyle, Cecil Tucker, etc.)\n' +
-          '• View difficulty ratings (1-5 stars)\n' +
-          '• Toggle Timer vs Speed payout strategy\n' +
-          '• Auto voice channel creation\n' +
-          '• Cash & Gold tracking', inline: false },
-        { name: '📊 Reputation', value: '`?rep [@user]` - Check reputation', inline: true },
-        { name: '🎤 Voice', value: 'Auto-created when you start a session!', inline: true }
-      ],
-      footer: { text: 'Dropdown menus • Platform matching • Gold tracker' },
-      color: 0xC0392B
-    },
-    
-    // Reputation System
-    {
-      title: '📊 Player Reputation System',
-      description: `**NEXUS tracks every player's reliability.**`,
-      fields: [
-        { name: '➕ Gain Reputation', value: '• Complete sessions: +5 rep\n• Be reliable and show up', inline: true },
-        { name: '➖ Lose Reputation', value: '• Cancel/abandon: -5 rep\n• Get reported: -10 to -30 rep', inline: true },
-        { name: '⚠️ Consequences', value: '• Low rep (<50): Warning shown when you join\n• Very low rep (<30): **LFG banned**', inline: false },
-        { name: '🔍 Check Reputation', value: '`?rep` - Your rep\n`?rep @user` - Someone else\'s rep', inline: false }
-      ],
-      footer: { text: 'Be reliable. Show up. Complete sessions.' },
-      color: 0x3498DB
-    },
-    
-    // Appeals System
-    {
-      title: '⚖️ Appeals System',
-      description: `**Got muted or banned? AI reviews your appeal.**`,
-      fields: [
-        { name: 'How to Appeal', value: 'DM any bot with **"appeal"** followed by your explanation.', inline: false },
-        { name: 'Example', value: '*"appeal I was just joking with my friend, we always talk like that"*', inline: false },
-        { name: 'What Happens', value: '• AI reviews your full history\n• AI considers context and patterns\n• Decision: **Approved**, **Reduced**, or **Denied**\n• You get a DM with the result', inline: false }
-      ],
-      footer: { text: 'Appeals are reviewed by AI, not humans. Be honest in your appeal.' },
-      color: 0x9B59B6
-    },
-    
-    // Quick Start
-    {
-      title: '🚀 Quick Start',
-      description: `**Get started in 3 steps:**`,
-      fields: [
-        { name: '1️⃣ Get Roles', value: '→ #roles\nPick your game, platform, and what you want pings for', inline: false },
-        { name: '2️⃣ Find Crew', value: '→ Use LFG channels\nCommands work, but natural language works too!', inline: false },
-        { name: '3️⃣ Complete Sessions', value: '→ Use the session buttons\nClick ✅ Complete to finish sessions and earn reputation', inline: false }
-      ],
-      footer: { text: 'The bots are AI-powered. They understand context, remember conversations, and have real personalities. Just talk to them!' },
-      color: 0x2ECC71
-    }
-  ]
+  reactions: ['💰', '🐴', '5️⃣', '4️⃣', '🏝️', '🚁', '🛞', '💀']
 };
 
 // ============================================
@@ -539,13 +273,6 @@ I'm going to create:
 • ${SERVER_STRUCTURE.roles.length} roles
 • ${SERVER_STRUCTURE.categories.length} categories
 • ${SERVER_STRUCTURE.categories.reduce((acc, cat) => acc + cat.channels.length, 0)} channels
-
-**Role-Gated Visibility:**
-• Unverified: Only see INFO (welcome, verify, rules)
-• Verified: See GENERAL + roles
-• GTA Role: Unlocks GTA 5 ONLINE category
-• RDO Role: Unlocks RED DEAD 2 ONLINE category
-• Cayo/Wagon/Bounty roles: Unlock specific LFG channels
 
 Existing channels will NOT be deleted, but this will add a lot of new stuff.
 
@@ -583,44 +310,28 @@ Existing channels will NOT be deleted, but this will add a lot of new stuff.
     const createdChannels = await createCategoriesAndChannels(message.guild, createdRoles);
     
     // Set up permissions
-    await updateStatus(statusChannel, '🔐 Setting up role-gated permissions...');
+    await updateStatus(statusChannel, '🔐 Setting up permissions...');
     await setupPermissions(message.guild, createdRoles, createdChannels);
     
     // Send welcome message
     await updateStatus(statusChannel, '👋 Setting up welcome message...');
     await setupWelcomeMessage(createdChannels);
     
-    // Send about-us
-    await updateStatus(statusChannel, '📖 Setting up about-us...');
-    await setupAboutUs(createdChannels);
-    
     // Send verification embed
     await updateStatus(statusChannel, '🔐 Setting up verification...');
-    await setupVerification(createdChannels, createdRoles);
+    await setupVerification(createdChannels);
     
     // Send rules
     await updateStatus(statusChannel, '📜 Setting up rules...');
     await setupRules(createdChannels);
     
-    // Send role info
-    await updateStatus(statusChannel, '📋 Setting up role info...');
-    await setupRoleInfo(createdChannels);
-    
-    // Send role unlocks guide
-    await updateStatus(statusChannel, '🔓 Setting up role unlocks guide...');
-    await setupRoleUnlocks(createdChannels);
-    
     // Send bot commands
     await updateStatus(statusChannel, '🤖 Setting up bot commands list...');
     await setupBotCommands(createdChannels);
     
-    // Send staff commands guide
-    await updateStatus(statusChannel, '👑 Setting up staff commands...');
-    await setupStaffCommands(createdChannels);
-    
     // Send role selection
     await updateStatus(statusChannel, '🎮 Setting up role selection...');
-    await setupRoleSelection(createdChannels, createdRoles, client);
+    await setupRoleSelection(createdChannels, createdRoles);
     
     // Initialize counting
     await updateStatus(statusChannel, '🔢 Setting up counting game...');
@@ -636,7 +347,7 @@ Existing channels will NOT be deleted, but this will add a lot of new stuff.
     
     // Save config to database
     await updateStatus(statusChannel, '💾 Saving configuration...');
-    await saveConfig(message.guild, createdChannels, createdRoles, client);
+    await saveConfig(message.guild, createdChannels, client);
     
     // Final message
     const finalEmbed = new EmbedBuilder()
@@ -648,19 +359,12 @@ Existing channels will NOT be deleted, but this will add a lot of new stuff.
 • ${SERVER_STRUCTURE.categories.length} categories
 • ${Object.keys(createdChannels).length} channels
 
-**Role-Gated System Active:**
-• Unverified → Only see INFO
-• Verified → See GENERAL + roles
-• Game roles → Unlock game categories
-• LFG roles → Unlock specific channels
-
 **Log Channels Configured:**
 All logging is now active in the Staff Logs category.
 
 **Next Steps:**
 1. Give yourself the 🧠 Mastermind role
-2. Test verification in #verify
-3. Test role selection in #roles
+2. Test the LFG commands in the appropriate channels
 
 The server is ready. Don't screw it up.`)
       .setColor(0x00FF00)
@@ -689,14 +393,18 @@ The server is ready. Don't screw it up.`)
 
 async function updateStatus(channel, status) {
   await channel.send(`✅ ${status}`);
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit prevention
 }
 
 async function createRoles(guild) {
   const createdRoles = {};
   
-  for (const roleConfig of SERVER_STRUCTURE.roles.reverse()) {
+  // Delete existing roles with same names (optional - be careful)
+  // For safety, we'll just create new ones
+  
+  for (const roleConfig of SERVER_STRUCTURE.roles.reverse()) { // Reverse so highest roles are created last (positioned higher)
     try {
+      // Check if role exists
       let role = guild.roles.cache.find(r => r.name === roleConfig.name);
       
       if (!role) {
@@ -712,7 +420,7 @@ async function createRoles(guild) {
       }
       
       createdRoles[roleConfig.name] = role;
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 300)); // Rate limit
     } catch (error) {
       console.error(`Error creating role ${roleConfig.name}:`, error);
     }
@@ -724,7 +432,9 @@ async function createRoles(guild) {
 function getRolePermissions(type) {
   switch (type) {
     case 'ADMIN':
-      return [PermissionFlagsBits.Administrator];
+      return [
+        PermissionFlagsBits.Administrator
+      ];
     case 'MOD':
       return [
         PermissionFlagsBits.ManageMessages,
@@ -737,18 +447,11 @@ function getRolePermissions(type) {
         PermissionFlagsBits.ModerateMembers
       ];
     case 'BOT':
-      return [PermissionFlagsBits.Administrator];
+      return [
+        PermissionFlagsBits.Administrator
+      ];
     case 'MUTED':
       return [];
-    case 'VERIFIED':
-      return [
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.ViewChannel,
-        PermissionFlagsBits.ReadMessageHistory,
-        PermissionFlagsBits.AddReactions,
-        PermissionFlagsBits.Connect,
-        PermissionFlagsBits.Speak
-      ];
     default:
       return [
         PermissionFlagsBits.SendMessages,
@@ -766,6 +469,7 @@ async function createCategoriesAndChannels(guild, roles) {
   
   for (const categoryConfig of SERVER_STRUCTURE.categories) {
     try {
+      // Create category
       const category = await guild.channels.create({
         name: categoryConfig.name,
         type: ChannelType.GuildCategory,
@@ -775,6 +479,7 @@ async function createCategoriesAndChannels(guild, roles) {
       createdChannels[categoryConfig.name] = category;
       await new Promise(resolve => setTimeout(resolve, 300));
       
+      // Create channels in category
       for (const channelConfig of categoryConfig.channels) {
         try {
           const channelType = channelConfig.type === 'voice' ? ChannelType.GuildVoice : ChannelType.GuildText;
@@ -802,244 +507,249 @@ async function createCategoriesAndChannels(guild, roles) {
 
 async function setupPermissions(guild, roles, channels) {
   const everyoneRole = guild.roles.everyone;
-  const verifiedRole = roles['✅ Verified'];
   const mutedRole = roles['Muted'];
-  const staffRoles = [roles['👑 Owner'], roles['🧠 Mastermind'], roles['🔫 Enforcer'], roles['🤠 Deputy'], roles['🔧 Mechanic']].filter(Boolean);
+  const staffRoles = [roles['🧠 Mastermind'], roles['🔫 Enforcer'], roles['🤠 Deputy'], roles['🔧 Mechanic']].filter(Boolean);
   const botRoles = [roles['Lester'], roles['Pavel'], roles['Cripps'], roles['Madam Nazar'], roles['Police Chief']].filter(Boolean);
   
-  // Game roles
-  const gtaRole = roles['💰 Los Santos Hustler'];
-  const rdoRole = roles['🐴 Frontier Outlaw'];
-  
-  // LFG-specific roles
-  const cayoRole = roles['🏝️ Cayo Grinder'];
-  const wagonRole = roles['🛞 Wagon Runner'];
-  const bountyRole = roles['💀 Bounty Hunter'];
-  
-  // VIP and Progression roles
-  const vipRole = roles['💜 VIP'];
-  const patchedInRole = roles['⭐ Patched In'];
-
+  // Setup permissions for each channel based on type
   for (const categoryConfig of SERVER_STRUCTURE.categories) {
     for (const channelConfig of categoryConfig.channels) {
       const channel = channels[channelConfig.name];
       if (!channel) continue;
       
       try {
-        const permOverwrites = [];
-        
         switch (channelConfig.permissions) {
-          // PUBLIC - Everyone can see (unverified too)
-          case 'public-readonly':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.SendMessages], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory] },
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles] }))
-            );
+          case 'readonly':
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions],
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory]
+              },
+              ...staffRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages]
+              })),
+              ...botRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles]
+              }))
+            ]);
             break;
-          
-          case 'public-verify':
-            // Everyone can see and add reactions (for verify button)
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.SendMessages], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] },
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] }))
-            );
+            
+          case 'react-only':
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                deny: [PermissionFlagsBits.SendMessages],
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions]
+              },
+              ...staffRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages]
+              })),
+              ...botRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks]
+              }))
+            ]);
             break;
-          
-          // UNVERIFIED ONLY - Hidden after verification
-          case 'unverified-only':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.SendMessages], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory] },
-              ...(verifiedRole ? [{ id: verifiedRole.id, deny: [PermissionFlagsBits.ViewChannel] }] : []), // Hide from verified
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles] }))
-            );
+            
+          case 'staff-only':
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                deny: [PermissionFlagsBits.ViewChannel]
+              },
+              ...staffRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
+              })),
+              ...botRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks]
+              }))
+            ]);
             break;
-          
-          case 'unverified-only-react':
-            // For verify channel - unverified can see and click buttons, hidden after verify
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.SendMessages], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] },
-              ...(verifiedRole ? [{ id: verifiedRole.id, deny: [PermissionFlagsBits.ViewChannel] }] : []), // Hide from verified
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] }))
-            );
-            break;
-          
-          // VERIFIED ONLY
-          case 'verified':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(verifiedRole ? [{ id: verifiedRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] })),
-              ...(mutedRole ? [{ id: mutedRole.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions] }] : [])
-            );
-            break;
-          
-          case 'verified-readonly':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(verifiedRole ? [{ id: verifiedRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles] }))
-            );
-            break;
-          
-          case 'verified-react':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(verifiedRole ? [{ id: verifiedRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions], deny: [PermissionFlagsBits.SendMessages] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] }))
-            );
-            break;
-          
-          case 'verified-counting':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(verifiedRole ? [{ id: verifiedRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.AddReactions] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }))
-            );
+            
+          case 'counting':
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
+                deny: [PermissionFlagsBits.AddReactions]
+              }
+            ]);
             break;
           
           case 'stats':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect] },
-              ...(verifiedRole ? [{ id: verifiedRole.id, allow: [PermissionFlagsBits.ViewChannel], deny: [PermissionFlagsBits.Connect] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel], deny: [PermissionFlagsBits.Connect] }))
-            );
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                allow: [PermissionFlagsBits.ViewChannel],
+                deny: [PermissionFlagsBits.Connect]
+              }
+            ]);
             break;
           
-          // GAME ROLE GATED - Visible if GTA OR RDO role
-          case 'game-role-readonly':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(gtaRole ? [{ id: gtaRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages] }] : []),
-              ...(rdoRole ? [{ id: rdoRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] }))
-            );
+          case 'public-readonly':
+            // Everyone can see (including unverified), but only staff/bots can send
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions],
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory]
+              },
+              ...staffRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages]
+              })),
+              ...botRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles]
+              }))
+            ]);
             break;
           
-          // GTA ONLY - Need 💰 Los Santos Hustler
-          case 'gta-only':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(gtaRole ? [{ id: gtaRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] })),
-              ...(mutedRole ? [{ id: mutedRole.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions] }] : [])
-            );
+          case 'verified':
+            // Only verified users can see and send
+            const verifiedRole = roles['✅ Verified'];
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                deny: [PermissionFlagsBits.ViewChannel]
+              },
+              ...(verifiedRole ? [{
+                id: verifiedRole.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions]
+              }] : []),
+              ...staffRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages]
+              })),
+              ...botRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks]
+              })),
+              ...(mutedRole ? [{
+                id: mutedRole.id,
+                deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions]
+              }] : [])
+            ]);
             break;
           
-          case 'gta-readonly':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(gtaRole ? [{ id: gtaRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles] }))
-            );
+          case 'verified-readonly':
+            // Only verified users can see, but only staff/bots can send
+            const verifiedRoleRO = roles['✅ Verified'];
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                deny: [PermissionFlagsBits.ViewChannel]
+              },
+              ...(verifiedRoleRO ? [{
+                id: verifiedRoleRO.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory],
+                deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions]
+              }] : []),
+              ...staffRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages]
+              })),
+              ...botRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles]
+              }))
+            ]);
             break;
           
-          // CAYO ONLY - Need 🏝️ Cayo Grinder (subset of GTA)
-          case 'cayo-only':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(cayoRole ? [{ id: cayoRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] })),
-              ...(mutedRole ? [{ id: mutedRole.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions] }] : [])
-            );
+          case 'verified-stats':
+            // Only verified users can see stats, no one can connect
+            const verifiedRoleStats = roles['✅ Verified'];
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect]
+              },
+              ...(verifiedRoleStats ? [{
+                id: verifiedRoleStats.id,
+                allow: [PermissionFlagsBits.ViewChannel],
+                deny: [PermissionFlagsBits.Connect]
+              }] : []),
+              ...staffRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel],
+                deny: [PermissionFlagsBits.Connect]
+              })),
+              ...botRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel],
+                deny: [PermissionFlagsBits.Connect]
+              }))
+            ]);
             break;
           
-          // RDO ONLY - Need 🐴 Frontier Outlaw
-          case 'rdo-only':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(rdoRole ? [{ id: rdoRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] })),
-              ...(mutedRole ? [{ id: mutedRole.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions] }] : [])
-            );
+          case 'verified-react':
+            // Only verified users can see and react, only staff/bots can send
+            const verifiedRoleReact = roles['✅ Verified'];
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                deny: [PermissionFlagsBits.ViewChannel]
+              },
+              ...(verifiedRoleReact ? [{
+                id: verifiedRoleReact.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions],
+                deny: [PermissionFlagsBits.SendMessages]
+              }] : []),
+              ...staffRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages]
+              })),
+              ...botRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks]
+              }))
+            ]);
             break;
           
-          case 'rdo-readonly':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(rdoRole ? [{ id: rdoRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles] }))
-            );
+          case 'verified-counting':
+            // Only verified users can see/send, no reactions
+            const verifiedRoleCount = roles['✅ Verified'];
+            await channel.permissionOverwrites.set([
+              {
+                id: everyoneRole.id,
+                deny: [PermissionFlagsBits.ViewChannel]
+              },
+              ...(verifiedRoleCount ? [{
+                id: verifiedRoleCount.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
+                deny: [PermissionFlagsBits.AddReactions]
+              }] : []),
+              ...staffRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages]
+              })),
+              ...botRoles.map(role => ({
+                id: role.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+              }))
+            ]);
             break;
-          
-          // WAGON ONLY - Need 🛞 Wagon Runner (subset of RDO)
-          case 'wagon-only':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(wagonRole ? [{ id: wagonRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] })),
-              ...(mutedRole ? [{ id: mutedRole.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions] }] : [])
-            );
-            break;
-          
-          // BOUNTY ONLY - Need 💀 Bounty Hunter (subset of RDO)
-          case 'bounty-only':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(bountyRole ? [{ id: bountyRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] })),
-              ...(mutedRole ? [{ id: mutedRole.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions] }] : [])
-            );
-            break;
-          
-          // VIP ONLY - Need 💜 VIP role (boosters)
-          case 'vip-only':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(vipRole ? [{ id: vipRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks] }] : []),
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] }))
-            );
-            break;
-          
-          // PATCHED IN ONLY - Need ⭐ Patched In role (7+ days in server)
-          case 'patched-in-only':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...(patchedInRole ? [{ id: patchedInRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks] }] : []),
-              ...(vipRole ? [{ id: vipRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks] }] : []), // VIP also gets access
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] })),
-              ...(mutedRole ? [{ id: mutedRole.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions] }] : [])
-            );
-            break;
-          
-          // STAFF ONLY
-          case 'staff-only':
-            permOverwrites.push(
-              { id: everyoneRole.id, deny: [PermissionFlagsBits.ViewChannel] },
-              ...staffRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageMessages] })),
-              ...botRoles.map(r => ({ id: r.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks] }))
-            );
-            break;
-          
-          default:
+            
+          default: // normal
             if (mutedRole) {
-              permOverwrites.push(
-                { id: everyoneRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions] },
-                { id: mutedRole.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions] }
-              );
+              await channel.permissionOverwrites.set([
+                {
+                  id: everyoneRole.id,
+                  allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions]
+                },
+                {
+                  id: mutedRole.id,
+                  deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions]
+                }
+              ]);
             }
             break;
-        }
-        
-        if (permOverwrites.length > 0) {
-          await channel.permissionOverwrites.set(permOverwrites);
         }
         
         await new Promise(resolve => setTimeout(resolve, 200));
@@ -1056,7 +766,9 @@ async function setupWelcomeMessage(channels) {
   
   const embed = new EmbedBuilder()
     .setTitle(WELCOME_MESSAGE.title)
-    .setDescription(WELCOME_MESSAGE.description)
+    .setDescription(WELCOME_MESSAGE.description
+      .replace('RULES_CHANNEL', channels['rules']?.id || 'rules')
+      .replace('ROLES_CHANNEL', channels['roles']?.id || 'roles'))
     .setColor(WELCOME_MESSAGE.color)
     .setImage('https://i.imgur.com/nVNwMAJ.png')
     .setFooter({ text: 'The Unpatched Method' })
@@ -1065,69 +777,9 @@ async function setupWelcomeMessage(channels) {
   await welcomeChannel.send({ embeds: [embed] });
 }
 
-async function setupAboutUs(channels) {
-  const aboutChannel = channels['about-us'];
-  if (!aboutChannel) return;
-  
-  const embed = new EmbedBuilder()
-    .setTitle('📖 ABOUT THE UNPATCHED METHOD')
-    .setDescription(`**The premier Rockstar glitch grinding community.**
-
-We're a community of GTA Online and Red Dead Online players who grind together using efficient methods. No modding, no scamming, no bullshit - just smart grinding with reliable people.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**🎮 WHAT WE DO**
-
-**GTA Online:**
-• Cayo Perico B2B - Back-to-back heists without setups
-• Advanced LFG with dropdown menus & payout tracking
-
-**Red Dead Online:**
-• Wagon Duplication - 11 dupes in 15 mins = $2,750+
-• Bounty Hunting - Regular and legendary bounties with gold tracking
-• Trader/Moonshine deliveries
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**🤖 OUR AI BOTS**
-
-We have 5 AI-powered bots that help run the server:
-• **Lester** - Server management & moderation
-• **Pavel** - GTA Cayo Perico LFG system
-• **Cripps** - RDO wagon LFG system
-• **Madam Nazar** - Daily location updates
-• **Police Chief** - Bounty LFG system
-
-They understand natural language - just talk to them!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**📊 PROGRESSION SYSTEM**
-
-Earn roles by:
-• Time in server (7 days, 30 days, 90 days)
-• Activity (messages, voice, reactions)
-• Completions (heists, wagons, bounties)
-
-Check #role-unlocks after verifying to see all earnable roles!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**🎮 PLATFORM**
-PlayStation 4 & PlayStation 5 only.`)
-    .setColor(0x5865F2)
-    .setFooter({ text: 'The Unpatched Method • 271 Features • Est. 2024' })
-    .setTimestamp();
-  
-  await aboutChannel.send({ embeds: [embed] });
-}
-
-async function setupVerification(channels, roles) {
+async function setupVerification(channels) {
   const verifyChannel = channels['verify'];
   if (!verifyChannel) return;
-  
-  const verifiedRole = roles['✅ Verified'];
   
   const embed = new EmbedBuilder()
     .setTitle('🔐 Verification Required')
@@ -1140,14 +792,14 @@ async function setupVerification(channels, roles) {
       `**Your account will be checked against global ban databases.**\n\n` +
       `Click the button below to verify and gain access to all channels.`
     )
-    .setColor(0xFFD700)
+    .setColor(0x5865F2)
     .setFooter({ text: 'Verification is quick and automatic' })
     .setTimestamp();
 
   const row = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
-        .setCustomId(`verify_${verifiedRole?.id || 'norole'}`)
+        .setCustomId('verify_user')
         .setLabel('✅ Verify Me')
         .setStyle(ButtonStyle.Success)
     );
@@ -1163,583 +815,182 @@ async function setupRules(channels) {
     .setTitle(RULES_MESSAGE.title)
     .setDescription(RULES_MESSAGE.description)
     .setColor(RULES_MESSAGE.color)
-    .setFooter({ text: 'Breaking rules = consequences. Simple.' })
+    .setFooter({ text: 'Last updated' })
     .setTimestamp();
   
   await rulesChannel.send({ embeds: [embed] });
-}
-
-async function setupRoleInfo(channels) {
-  const roleInfoChannel = channels['role-info'];
-  if (!roleInfoChannel) return;
-  
-  // Staff Hierarchy Embed
-  const staffEmbed = new EmbedBuilder()
-    .setTitle('👑 STAFF HIERARCHY')
-    .setDescription('The people who keep this place running.')
-    .addFields(
-      { name: '👑 Owner', value: 'Server creator. Ultimate authority.', inline: false },
-      { name: '🧠 Mastermind', value: 'Senior Administrator. Full server control.', inline: false },
-      { name: '🔫 Enforcer', value: 'Administrator. Handles serious issues.', inline: false },
-      { name: '🤠 Deputy', value: 'Moderator. Day-to-day moderation.', inline: false },
-      { name: '🔧 Mechanic', value: 'Junior Moderator. Helps with basic tasks.', inline: false }
-    )
-    .setColor(0xFF0000)
-    .setFooter({ text: 'Listen to staff. They\'re here to help.' });
-  
-  await roleInfoChannel.send({ embeds: [staffEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Time-Based Progression Embed
-  const progressionEmbed = new EmbedBuilder()
-    .setTitle('📈 TIME-BASED PROGRESSION')
-    .setDescription('Ranks earned by time in the server. Be patient, stay active!')
-    .addFields(
-      { name: '🆕 Fresh Spawn', value: '**0-7 days**\nNew member. Limited access.\n*Can\'t post in #clips yet.*', inline: true },
-      { name: '⭐ Patched In', value: '**7+ days**\nTrusted member.\n*Unlocks #clips channel!*', inline: true },
-      { name: '🏆 Glitch Veteran', value: '**30+ days**\nRespected member.\n*You\'re part of the crew.*', inline: true },
-      { name: '💎 Method Finder', value: '**90+ days**\nSenior member.\n*You\'ve proven yourself.*', inline: true }
-    )
-    .setColor(0x4CAF50)
-    .setFooter({ text: 'Ranks are automatic. Just keep grinding!' });
-  
-  await roleInfoChannel.send({ embeds: [progressionEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // GTA Activity Ranks
-  const gtaRanksEmbed = new EmbedBuilder()
-    .setTitle('🎮 GTA HEIST RANKS')
-    .setDescription('**Earn these by completing Cayo Perico heists!**\nRanks are awarded automatically when you complete sessions in #cayo-lfg.')
-    .addFields(
-      { name: '🐟 Small Fry', value: '5+ completions', inline: true },
-      { name: '🦈 Shark Card Killer', value: '25+ completions', inline: true },
-      { name: '🐋 Whale Hunter', value: '50+ completions', inline: true },
-      { name: '👑 El Rubio\'s Nightmare', value: '100+ completions', inline: true }
-    )
-    .setColor(0x00CED1)
-    .setFooter({ text: 'Complete sessions using the ✅ Complete button!' });
-  
-  await roleInfoChannel.send({ embeds: [gtaRanksEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // RDO Wagon Ranks
-  const wagonRanksEmbed = new EmbedBuilder()
-    .setTitle('🛒 WAGON DELIVERY RANKS')
-    .setDescription('**Earn these by completing wagon deliveries!**')
-    .addFields(
-      { name: '📦 Delivery Boy', value: '5+ completions', inline: true },
-      { name: '🛒 Supply Runner', value: '25+ completions', inline: true },
-      { name: '🚚 Trade Baron', value: '50+ completions', inline: true },
-      { name: '🏰 Cripps\' Partner', value: '100+ completions', inline: true }
-    )
-    .setColor(0x8B4513)
-    .setFooter({ text: 'Complete sessions using the ✅ Complete button!' });
-  
-  await roleInfoChannel.send({ embeds: [wagonRanksEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // RDO Bounty Ranks
-  const bountyRanksEmbed = new EmbedBuilder()
-    .setTitle('🎯 BOUNTY HUNTER RANKS')
-    .setDescription('**Earn these by completing bounty hunts!**')
-    .addFields(
-      { name: '🔫 Rookie Hunter', value: '5+ completions', inline: true },
-      { name: '🎯 Sharpshooter', value: '25+ completions', inline: true },
-      { name: '⚔️ Manhunter', value: '50+ completions', inline: true },
-      { name: '💀 Grim Reaper', value: '100+ completions', inline: true }
-    )
-    .setColor(0xDC143C)
-    .setFooter({ text: 'Complete sessions using the ✅ Complete button!' });
-  
-  await roleInfoChannel.send({ embeds: [bountyRanksEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Special Achievement Roles
-  const achievementsEmbed = new EmbedBuilder()
-    .setTitle('🏅 SPECIAL ACHIEVEMENTS')
-    .setDescription('**Rare roles for exceptional grinders!**')
-    .addFields(
-      { name: '🏆 The #1', value: 'Top weekly contributor', inline: true },
-      { name: '🌟 Helping Hand', value: '50+ sessions as helper (non-host)', inline: true },
-      { name: '🎖️ Veteran Grinder', value: '500+ total completions', inline: true },
-      { name: '🔥 On Fire', value: '10 completions in 24 hours', inline: true }
-    )
-    .setColor(0xFFD700)
-    .setFooter({ text: 'These are rare. Flex them proudly.' });
-  
-  await roleInfoChannel.send({ embeds: [achievementsEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // VIP Embed
-  const vipEmbed = new EmbedBuilder()
-    .setTitle('💜 VIP PERKS')
-    .setDescription('**Boost the server to unlock exclusive perks!**')
-    .addFields(
-      { name: 'How to Get VIP', value: 'Boost the server with Discord Nitro! Your VIP role is automatic.', inline: false },
-      { name: '🎁 Your Perks', value: 
-        '💜 **VIP Role** - Hoisted above regular members\n' +
-        '🏠 **VIP Lounge** - Exclusive booster-only chat\n' +
-        '⚡ **Priority LFG** - Get matched first in heists\n' +
-        '🎨 **Custom Color** - Stand out in chat\n' +
-        '🎬 **Clips Access** - Immediate access (skip 7-day wait)\n' +
-        '🏆 **Eternal Gratitude** - We love you', inline: false
-      }
-    )
-    .setColor(0xFF73FA)
-    .setFooter({ text: 'Thank you for supporting The Unpatched Method! 💜' });
-  
-  await roleInfoChannel.send({ embeds: [vipEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Anti-Abuse Info
-  const antiAbuseEmbed = new EmbedBuilder()
-    .setTitle('🛡️ FAIR PLAY SYSTEM')
-    .setDescription('**We track activity to prevent abuse.**')
-    .addFields(
-      { name: '⏱️ Minimum Session Time', value: 'Cayo: 15 min | Wagon: 8 min | Bounty: 5 min\n*Can\'t speed-run completions*', inline: false },
-      { name: '👥 Crew Verification', value: 'At least 2 people must join, and participants confirm completion.\n*No solo farming*', inline: false },
-      { name: '⏳ Cooldowns', value: 'Short wait between completions.\n*Prevents spam*', inline: false },
-      { name: '📊 Pattern Detection', value: 'Lester watches for suspicious activity.\n*Same 2 people farming = flagged*', inline: false }
-    )
-    .setColor(0x3498DB)
-    .setFooter({ text: 'Play fair. Earn your ranks legitimately.' });
-  
-  await roleInfoChannel.send({ embeds: [antiAbuseEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Game Roles Embed
-  const gameRolesEmbed = new EmbedBuilder()
-    .setTitle('🎮 GAME & LFG ROLES')
-    .setDescription('Get these in #roles to unlock channels.')
-    .addFields(
-      { name: 'Game Selection', value: 
-        '💰 **Los Santos Hustler** - GTA Online player\n' +
-        '🐴 **Frontier Outlaw** - Red Dead Online player', inline: false },
-      { name: 'GTA LFG Roles', value: 
-        '🏝️ **Cayo Grinder** - Unlocks cayo-lfg & talk-to-pavel', inline: false },
-      { name: 'RDO LFG Roles', value: 
-        '🛞 **Wagon Runner** - Unlocks wagon-lfg & talk-to-cripps\n' +
-        '💀 **Bounty Hunter** - Unlocks bounty-lfg & talk-to-police-chief', inline: false },
-      { name: 'Platform Roles', value: 
-        '🎮 **PlayStation 5**\n' +
-        '🎮 **PlayStation 4**\n' +
-        '*If you have both, Lester will DM you to pick your primary!*', inline: false }
-    )
-    .setColor(0x5865F2)
-    .setFooter({ text: 'Pick your roles in #roles' });
-  
-  await roleInfoChannel.send({ embeds: [gameRolesEmbed] });
-}
-
-async function setupRoleUnlocks(channels) {
-  const roleUnlocksChannel = channels['role-unlocks'];
-  if (!roleUnlocksChannel) return;
-  
-  // Header
-  const headerEmbed = new EmbedBuilder()
-    .setTitle('🔓 ALL UNLOCKABLE ROLES')
-    .setDescription(`**Every role you can earn in The Unpatched Method!**\n\nRoles are earned through time, activity, completions, and achievements. This is your progression guide.`)
-    .setColor(0xFFD700);
-  
-  await roleUnlocksChannel.send({ embeds: [headerEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== TIME-BASED PROGRESSION ==========
-  const timeEmbed = new EmbedBuilder()
-    .setTitle('⏰ TIME-BASED PROGRESSION')
-    .setDescription('*Automatically earned by being in the server*')
-    .addFields(
-      { name: '🆕 Fresh Spawn', value: '`0-7 days` - New member', inline: true },
-      { name: '⭐ Patched In', value: '`7+ days` - Unlocks #clips', inline: true },
-      { name: '🏆 Glitch Veteran', value: '`30+ days` - Trusted', inline: true },
-      { name: '💎 Method Finder', value: '`90+ days` - Senior', inline: true }
-    )
-    .setColor(0x4CAF50)
-    .setFooter({ text: 'These are automatic - just stay active!' });
-  
-  await roleUnlocksChannel.send({ embeds: [timeEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== ACTIVITY XP RANKS ==========
-  const xpEmbed = new EmbedBuilder()
-    .setTitle('⭐ ACTIVITY XP RANKS')
-    .setDescription('*Earned from chatting, voice, reactions, commands*')
-    .addFields(
-      { name: '🌱 Active Seed', value: '`100 XP`', inline: true },
-      { name: '🌿 Growing Member', value: '`500 XP`', inline: true },
-      { name: '🌳 Rooted Regular', value: '`2,500 XP`', inline: true },
-      { name: '🌟 Server Star', value: '`10,000 XP`', inline: true },
-      { name: '💫 Community Legend', value: '`50,000 XP`', inline: true }
-    )
-    .setColor(0x27AE60)
-    .setFooter({ text: 'XP: Messages (1-3) | Voice (1/min) | Reactions (0.5) | Daily Bonus (50)' });
-  
-  await roleUnlocksChannel.send({ embeds: [xpEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== MESSAGE RANKS ==========
-  const messageEmbed = new EmbedBuilder()
-    .setTitle('💬 MESSAGE RANKS')
-    .setDescription('*Earned by chatting in the server*')
-    .addFields(
-      { name: '💬 Chatterbox', value: '`500 messages`', inline: true },
-      { name: '🗣️ Conversation Starter', value: '`2,500 messages`', inline: true },
-      { name: '📢 Server Voice', value: '`10,000 messages`', inline: true },
-      { name: '👑 Legendary Talker', value: '`25,000 messages`', inline: true }
-    )
-    .setColor(0x3498DB)
-    .setFooter({ text: 'Keep chatting to rank up!' });
-  
-  await roleUnlocksChannel.send({ embeds: [messageEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== VOICE RANKS ==========
-  const voiceEmbed = new EmbedBuilder()
-    .setTitle('🎤 VOICE RANKS')
-    .setDescription('*Earned by time in voice channels*')
-    .addFields(
-      { name: '🎧 Voice Regular', value: '`10 hours`', inline: true },
-      { name: '🎤 Party Animal', value: '`50 hours`', inline: true },
-      { name: '🔊 Voice Lord', value: '`100 hours`', inline: true }
-    )
-    .setColor(0xE74C3C)
-    .setFooter({ text: 'Hang out in voice to rank up!' });
-  
-  await roleUnlocksChannel.send({ embeds: [voiceEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== GTA HEIST RANKS ==========
-  const gtaEmbed = new EmbedBuilder()
-    .setTitle('🎮 GTA HEIST RANKS')
-    .setDescription('*Earned by completing Cayo Perico heists*')
-    .addFields(
-      { name: '🐟 Small Fry', value: '`5 completions`', inline: true },
-      { name: '🦈 Shark Card Killer', value: '`25 completions`', inline: true },
-      { name: '🐋 Whale Hunter', value: '`50 completions`', inline: true },
-      { name: '👑 El Rubio\'s Nightmare', value: '`100 completions`', inline: true }
-    )
-    .setColor(0x00CED1)
-    .setFooter({ text: 'Use ?cayo to start sessions • Click ✅ Complete when done!' });
-  
-  await roleUnlocksChannel.send({ embeds: [gtaEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== WAGON RANKS ==========
-  const wagonEmbed = new EmbedBuilder()
-    .setTitle('🛒 WAGON DELIVERY RANKS')
-    .setDescription('*Earned by completing wagon deliveries*')
-    .addFields(
-      { name: '📦 Delivery Boy', value: '`5 completions`', inline: true },
-      { name: '🛒 Supply Runner', value: '`25 completions`', inline: true },
-      { name: '🚚 Trade Baron', value: '`50 completions`', inline: true },
-      { name: '🏰 Cripps\' Partner', value: '`100 completions`', inline: true }
-    )
-    .setColor(0x8B4513)
-    .setFooter({ text: 'Use ?wagon to start sessions • Click ✅ Complete when done!' });
-  
-  await roleUnlocksChannel.send({ embeds: [wagonEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== BOUNTY RANKS ==========
-  const bountyEmbed = new EmbedBuilder()
-    .setTitle('🎯 BOUNTY HUNTER RANKS')
-    .setDescription('*Earned by completing bounty hunts*')
-    .addFields(
-      { name: '🔫 Rookie Hunter', value: '`5 completions`', inline: true },
-      { name: '🎯 Sharpshooter', value: '`25 completions`', inline: true },
-      { name: '⚔️ Manhunter', value: '`50 completions`', inline: true },
-      { name: '💀 Grim Reaper', value: '`100 completions`', inline: true }
-    )
-    .setColor(0xDC143C)
-    .setFooter({ text: 'Use ?bounty to start sessions • Click ✅ Complete when done!' });
-  
-  await roleUnlocksChannel.send({ embeds: [bountyEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== SPECIAL ACHIEVEMENTS ==========
-  const achievementsEmbed = new EmbedBuilder()
-    .setTitle('🏅 SPECIAL ACHIEVEMENTS')
-    .setDescription('*Rare roles for exceptional members*')
-    .addFields(
-      { name: '🏆 The #1', value: 'Top weekly contributor', inline: true },
-      { name: '🌟 Helping Hand', value: '50+ helper sessions', inline: true },
-      { name: '🎖️ Veteran Grinder', value: '500+ total completions', inline: true },
-      { name: '🔥 On Fire', value: '10 completions in 24hrs', inline: true },
-      { name: '🔥 Streak Master', value: '30 day activity streak', inline: true },
-      { name: '👍 Reaction King', value: '1,000+ reactions given', inline: true }
-    )
-    .setColor(0xFFD700)
-    .setFooter({ text: 'These are rare - show them off!' });
-  
-  await roleUnlocksChannel.send({ embeds: [achievementsEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== SPECIAL TIME ROLES ==========
-  const timeSpecialEmbed = new EmbedBuilder()
-    .setTitle('🕐 SPECIAL TIME ROLES')
-    .setDescription('*Earned by being active at certain times*')
-    .addFields(
-      { name: '🦉 Night Owl', value: 'Active between 12am-6am', inline: true },
-      { name: '🐦 Early Bird', value: 'Active between 5am-9am', inline: true },
-      { name: '⚔️ Weekend Warrior', value: 'Most active on weekends', inline: true }
-    )
-    .setColor(0x34495E)
-    .setFooter({ text: 'Automatically detected based on your activity!' });
-  
-  await roleUnlocksChannel.send({ embeds: [timeSpecialEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== VIP ==========
-  const vipEmbed = new EmbedBuilder()
-    .setTitle('💜 VIP STATUS')
-    .setDescription('*Boost the server to become VIP!*')
-    .addFields(
-      { name: '💜 VIP', value: '**Boost the server** with Nitro', inline: false },
-      { name: 'Perks', value: 
-        '• Hoisted above regular members\n' +
-        '• Access to #vip-lounge\n' +
-        '• Priority LFG matching\n' +
-        '• 2x XP multiplier\n' +
-        '• Instant #clips access\n' +
-        '• Custom role color', inline: false }
-    )
-    .setColor(0xFF73FA)
-    .setFooter({ text: 'Thank you for supporting the server! 💜' });
-  
-  await roleUnlocksChannel.send({ embeds: [vipEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== ADVANCED LFG SYSTEMS ==========
-  const lfgEmbed = new EmbedBuilder()
-    .setTitle('🎮 ADVANCED LFG SYSTEMS')
-    .setDescription('*Interactive heist/activity matchmaking with live tracking*')
-    .addFields(
-      { name: '🏝️ Cayo Perico LFG', value: 
-        '• Select primary target (Pink Diamond, Bearer Bonds, etc.)\n' +
-        '• Choose approach (Drainage, Main Dock, etc.)\n' +
-        '• Toggle B2B mode\n' +
-        '• Auto voice channel creation\n' +
-        '• Live payout tracking', inline: false },
-      { name: '🛒 Wagon Delivery LFG', value: 
-        '• Local or Distant delivery selection\n' +
-        '• Dupe method toggle (11x dupes)\n' +
-        '• Wagon size selection\n' +
-        '• Auto voice channel creation\n' +
-        '• Earnings tracker', inline: false },
-      { name: '🎯 Bounty Hunter LFG', value: 
-        '• Regular, Legendary, or Infamous bounties\n' +
-        '• 10 Legendary targets with difficulty ratings\n' +
-        '• Timer vs Speed payout strategy\n' +
-        '• Cash & Gold tracking\n' +
-        '• Auto voice channel creation', inline: false }
-    )
-    .setColor(0x5865F2)
-    .setFooter({ text: 'Commands: ?cayo | ?wagon | ?bounty • All with dropdown menus!' });
-  
-  await roleUnlocksChannel.send({ embeds: [lfgEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // ========== XP MULTIPLIERS ==========
-  const multipliersEmbed = new EmbedBuilder()
-    .setTitle('✨ XP MULTIPLIERS')
-    .setDescription('*Ways to earn XP faster*')
-    .addFields(
-      { name: '🎉 Weekend Bonus', value: '`1.5x XP` on Saturdays & Sundays', inline: true },
-      { name: '💜 Booster Bonus', value: '`2x XP` for server boosters', inline: true },
-      { name: '🔥 Streak Bonus', value: '`+10% per day` (max 100%)', inline: true },
-      { name: '🎁 Daily Bonus', value: '`+50 XP` for first message each day', inline: true }
-    )
-    .setColor(0x9B59B6)
-    .setFooter({ text: 'Stack multipliers for maximum XP gains!' });
-  
-  await roleUnlocksChannel.send({ embeds: [multipliersEmbed] });
 }
 
 async function setupBotCommands(channels) {
   const botCommandsChannel = channels['bot-commands'];
   if (!botCommandsChannel) return;
   
-  for (const embedData of BOT_COMMANDS_MESSAGE.embeds) {
-    const embed = new EmbedBuilder()
-      .setTitle(embedData.title)
-      .setDescription(embedData.description)
-      .setColor(embedData.color);
+  // Get channel IDs for proper linking
+  const talkLester = channels['talk-to-lester']?.id || 'talk-to-lester';
+  const talkPavel = channels['talk-to-pavel']?.id || 'talk-to-pavel';
+  const talkCripps = channels['talk-to-cripps']?.id || 'talk-to-cripps';
+  const talkMadam = channels['talk-to-madam']?.id || 'talk-to-madam';
+  const talkChief = channels['talk-to-police-chief']?.id || 'talk-to-police-chief';
+  const madamNazar = channels['madam-nazar']?.id || 'madam-nazar';
+  const rolesChannel = channels['roles']?.id || 'roles';
+  
+  // NEXUS Header
+  const nexusEmbed = new EmbedBuilder()
+    .setTitle('🧠 NEXUS AI-POWERED BOTS')
+    .setDescription(`**All 6 bots are powered by NEXUS - they understand natural language.**
+
+You don't need commands. Just talk normally:
+• *"anyone wanna do cayo?"* → Creates LFG automatically
+• *"need help with wagon"* → Creates LFG automatically
+• *"where is nazar?"* → Shows location
+
+Commands still work if you prefer them. The bots also chat freely - they have real personalities. Just talk to them!`)
+    .setColor(0x5865F2)
+    .setFooter({ text: 'NEXUS AI • Every decision powered by AI' });
+
+  // Lester Commands
+  const lesterEmbed = new EmbedBuilder()
+    .setTitle('🧠 Lester - The Mastermind')
+    .setDescription(`**Server Management & AI Moderation**\nLester runs NEXUS moderation - he watches everything and handles problems automatically.`)
+    .setColor(0xFFD700)
+    .addFields(
+      { name: '💬 Chat', value: `<#${talkLester}> - Talk to Lester anytime`, inline: true },
+      { name: '🛡️ Moderation', value: 'Fully automatic. No commands needed.', inline: true },
+      { name: '📊 Utility Commands', value: '`?help` - Show commands\n`?ping` - Bot latency\n`?serverinfo` - Server stats\n`?userinfo @user` - User info', inline: false },
+      { name: '🔫 Gun Van', value: '`?gunvan` - Today\'s Gun Van location & stock', inline: true },
+      { name: '🔢 Counting', value: '`?countrecord` - View record', inline: true },
+      { name: '⚙️ Admin', value: '`?setup` - Server setup\n`?reset` - Reset server', inline: true }
+    )
+    .setFooter({ text: 'Lester handles moderation, appeals, and daily reports automatically' });
+  
+  // Pavel Commands
+  const pavelEmbed = new EmbedBuilder()
+    .setTitle('🚁 Pavel - The Submarine Captain')
+    .setDescription(`**GTA Online Heist LFG**\n*"Ah, Kapitan! Let us make some money, yes?"*`)
+    .setColor(0xFFD700)
+    .addFields(
+      { name: '💬 Chat', value: `<#${talkPavel}> - Talk to Pavel`, inline: true },
+      { name: '📍 LFG Channel', value: '#cayo-lfg', inline: true },
+      { name: '🗣️ Natural Language', value: 'Just say *"anyone wanna do cayo?"* or *"need 2 for heist"* - Pavel understands!', inline: false },
+      { name: '🎮 LFG Commands', value: '`?cayo` - Cayo Perico heist\n`?casino` - Casino heist\n`?heist` - Any heist\n`?bogdan` - Act 2 Bogdan', inline: false },
+      { name: '📊 Reputation', value: '`?rep [@user]` - Check player reputation', inline: true },
+      { name: '✅ Session', value: '`?done` - Complete (+rep)\n`?cancel` - Cancel session', inline: true }
+    )
+    .setFooter({ text: 'Reputation system tracks reliable players • Voice channels auto-created' });
+  
+  // Cripps Commands
+  const crippsEmbed = new EmbedBuilder()
+    .setTitle('🐎 Cripps - The Old Trader')
+    .setDescription(`**Red Dead Online Wagon LFG**\n*"Did I ever tell you about the time I... never mind."*`)
+    .setColor(0xFFD700)
+    .addFields(
+      { name: '💬 Chat', value: `<#${talkCripps}> - Talk to Cripps`, inline: true },
+      { name: '📍 LFG Channel', value: '#wagon-lfg', inline: true },
+      { name: '🗣️ Natural Language', value: 'Just say *"need help with wagon"* or *"running deliveries"* - Cripps understands!', inline: false },
+      { name: '🚚 LFG Commands', value: '`?wagon` - Wagon delivery\n`?delivery` - Same as wagon\n`?trader` - Trader activities\n`?moonshine` - Moonshine delivery\n`?posse` - General posse', inline: false },
+      { name: '📊 Reputation', value: '`?rep [@user]` - Check reputation', inline: true },
+      { name: '✅ Session', value: '`?done` - Complete (+rep)\n`?cancel` - Cancel', inline: true }
+    )
+    .setFooter({ text: 'Reputation system tracks reliable players • Voice channels auto-created' });
+  
+  // Police Chief Commands
+  const chiefEmbed = new EmbedBuilder()
+    .setTitle('⭐ Police Chief - The Lawman')
+    .setDescription(`**Red Dead Online Bounty LFG**\n*"The law always needs good hunters."*`)
+    .setColor(0xFFD700)
+    .addFields(
+      { name: '💬 Chat', value: `<#${talkChief}> - Talk to the Chief`, inline: true },
+      { name: '📍 LFG Channel', value: '#bounty-lfg', inline: true },
+      { name: '🗣️ Natural Language', value: 'Just say *"anyone down for etta doyle?"* or *"need bounty crew"* - the Chief understands!', inline: false },
+      { name: '🎯 LFG Commands', value: '`?bounty` - Bounty hunting\n`?legendary [name]` - Legendary bounty\n`?etta` `?owlhoot` `?cecil` - Specific legendaries\n`?posse` - General posse', inline: false },
+      { name: '📊 Reputation', value: '`?rep [@user]` - Check reputation', inline: true },
+      { name: '✅ Session', value: '`?done` - Complete (+rep)\n`?cancel` - Cancel', inline: true }
+    )
+    .setFooter({ text: 'Reputation system tracks reliable players • Voice channels auto-created' });
+  
+  // Madam Nazar Commands
+  const nazarEmbed = new EmbedBuilder()
+    .setTitle('🔮 Madam Nazar - The Fortune Teller')
+    .setDescription(`**Daily Location & Collector Guide**\n*"The spirits have guided me here today..."*`)
+    .setColor(0x800080)
+    .addFields(
+      { name: '💬 Chat', value: `<#${talkMadam}> - Consult with Nazar`, inline: true },
+      { name: '📍 Daily Post', value: `<#${madamNazar}>`, inline: true },
+      { name: '🗣️ Natural Language', value: 'Just ask *"where is nazar?"* or *"nazar location"* - she\'ll tell you!', inline: false },
+      { name: '📍 Location Commands', value: '`?nazar` - Today\'s location\n`?where` - Same thing', inline: false },
+      { name: '🗺️ Collector Map', value: '[Jean Ropke Map](https://jeanropke.github.io/RDR2CollectorsMap/) - Best tool for collectibles', inline: false }
+    )
+    .setFooter({ text: 'Location changes daily at midnight UTC' });
+  
+  // Reputation System
+  const repEmbed = new EmbedBuilder()
+    .setTitle('📊 Player Reputation System')
+    .setDescription(`**NEXUS tracks every player's reliability.**`)
+    .setColor(0x00FF00)
+    .addFields(
+      { name: '⬆️ Gain Reputation', value: '• Complete sessions: **+5 rep**\n• Be reliable and show up', inline: true },
+      { name: '⬇️ Lose Reputation', value: '• Cancel/abandon: **-5 rep**\n• Get reported: **-10 to -30 rep**', inline: true },
+      { name: '⚠️ Consequences', value: '• Low rep (<50): Warning shown when you join\n• Very low rep (<30): **LFG banned**', inline: false },
+      { name: '🔍 Check Reputation', value: '`?rep` - Your rep\n`?rep @user` - Someone else\'s rep', inline: false }
+    )
+    .setFooter({ text: 'Be reliable. Show up. Complete sessions.' });
+
+  // Appeals
+  const appealsEmbed = new EmbedBuilder()
+    .setTitle('⚖️ Appeals System')
+    .setDescription(`**Got muted or banned? AI reviews your appeal.**`)
+    .setColor(0xFF6B6B)
+    .addFields(
+      { name: 'How to Appeal', value: 'DM any bot with **"appeal"** followed by your explanation.\n\nExample: *"appeal I was just joking with my friend, we always talk like that"*', inline: false },
+      { name: 'What Happens', value: '• AI reviews your full history\n• AI considers context and patterns\n• Decision: **Approved**, **Reduced**, or **Denied**\n• You get a DM with the result', inline: false }
+    )
+    .setFooter({ text: 'Appeals are reviewed by AI, not humans • Be honest in your appeal' });
+  
+  // Important Notes
+  const notesEmbed = new EmbedBuilder()
+    .setTitle('📋 Quick Start')
+    .setDescription(`**Get started in 3 steps:**
     
-    if (embedData.fields) {
-      embed.addFields(embedData.fields);
-    }
-    if (embedData.footer) {
-      embed.setFooter(embedData.footer);
-    }
-    
-    await botCommandsChannel.send({ embeds: [embed] });
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
+1️⃣ **Get Roles** → <#${rolesChannel}>
+   Pick your game, platform, and what you want pings for
+
+2️⃣ **Find Crew** → Use LFG channels
+   Commands work, but natural language works too!
+
+3️⃣ **Complete Sessions** → Use \`?done\`
+   This gives everyone +5 reputation
+
+**The bots are AI-powered.** They understand context, remember conversations, and have real personalities. Just talk to them!`)
+    .setColor(0x5865F2)
+    .setFooter({ text: 'Questions? Just ask any bot.' });
+
+  // Burner Phone Commands (NEW!)
+  const burnerEmbed = new EmbedBuilder()
+    .setTitle('📱 Burner Phone - The Support Line')
+    .setDescription(`**Secure Modmail & SOC-Level Security**\n*"Your message has been delivered..."*`)
+    .setColor(0x2ECC71)
+    .addFields(
+      { name: '📬 Contact Staff', value: 'DM this bot directly', inline: true },
+      { name: '🔒 Security', value: '7 threat intel APIs', inline: true },
+      { name: '📨 How It Works', value: '• DM Burner Phone with your issue\n• Staff sees when you\'re typing\n• You see when staff is viewing\n• Replies from "The Unpatched Method Staff"', inline: false },
+      { name: '🛡️ Security Features', value: '• Phishing & malware detection\n• Fake Discord/Steam link blocking\n• Dangerous file scanning\n• Social engineering detection', inline: false },
+      { name: '⌨️ Staff Commands', value: '`?close` `?claim` `?tickets` `?dm @user`\n`?note @user` `?history @user` `?stats`\n`?snippet` `?priority` `?transfer` `?away`', inline: false }
+    )
+    .setFooter({ text: 'Enterprise-grade security • SOC-level threat detection' });
+  
+  await botCommandsChannel.send({ embeds: [nexusEmbed] });
+  await botCommandsChannel.send({ embeds: [lesterEmbed] });
+  await botCommandsChannel.send({ embeds: [burnerEmbed] });
+  await botCommandsChannel.send({ embeds: [pavelEmbed] });
+  await botCommandsChannel.send({ embeds: [crippsEmbed] });
+  await botCommandsChannel.send({ embeds: [chiefEmbed] });
+  await botCommandsChannel.send({ embeds: [nazarEmbed] });
+  await botCommandsChannel.send({ embeds: [repEmbed] });
+  await botCommandsChannel.send({ embeds: [appealsEmbed] });
+  await botCommandsChannel.send({ embeds: [notesEmbed] });
 }
 
-async function setupStaffCommands(channels) {
-  const staffCommandsChannel = channels['staff-commands'];
-  if (!staffCommandsChannel) return;
-  
-  // Header
-  const headerEmbed = new EmbedBuilder()
-    .setTitle('👑 STAFF COMMAND CENTER')
-    .setDescription(`**Welcome to Staff Commands!**\n\nThis is your command reference. Your available commands depend on your role.\n\n*Use these powers wisely. Lester is always watching.*`)
-    .setColor(0xFFD700)
-    .setTimestamp();
-  
-  await staffCommandsChannel.send({ embeds: [headerEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Owner Commands
-  const ownerEmbed = new EmbedBuilder()
-    .setTitle('👑 Owner - Full Control')
-    .setDescription('*Server owner has access to everything*')
-    .addFields(
-      { name: '⚙️ Server Setup', value: 
-        '`?setup` - Create entire server structure\n' +
-        '`?nuke` - Delete EVERYTHING (irreversible)\n' +
-        '`?reset` - Delete bot-created content only', inline: false },
-      { name: '🔨 All Moderation', value: 'Access to ALL commands below', inline: false }
-    )
-    .setColor(0xFFD700)
-    .setFooter({ text: '👑 Owner Only' });
-  
-  await staffCommandsChannel.send({ embeds: [ownerEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Mastermind Commands
-  const mastermindEmbed = new EmbedBuilder()
-    .setTitle('🧠 Mastermind - Senior Admin')
-    .setDescription('*Full moderation access + server management*')
-    .addFields(
-      { name: '🔨 Moderation', value: 
-        '`?ban @user [reason]` - Permanent ban\n' +
-        '`?unban <user_id>` - Remove ban\n' +
-        '`?kick @user [reason]` - Kick from server\n' +
-        '`?mute @user [duration] [reason]` - Timeout user\n' +
-        '`?unmute @user` - Remove timeout\n' +
-        '`?warn @user <reason>` - Issue warning\n' +
-        '`?warnings @user` - View warnings', inline: false },
-      { name: '🧹 Management', value: 
-        '`?purge <amount>` - Delete messages (1-100)\n' +
-        '`?slowmode <seconds>` - Set slowmode\n' +
-        '`?lock` - Lock channel\n' +
-        '`?unlock` - Unlock channel', inline: false }
-    )
-    .setColor(0xFF0000)
-    .setFooter({ text: '🧠 Mastermind+' });
-  
-  await staffCommandsChannel.send({ embeds: [mastermindEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Enforcer Commands
-  const enforcerEmbed = new EmbedBuilder()
-    .setTitle('🔫 Enforcer - Admin')
-    .setDescription('*Core moderation powers*')
-    .addFields(
-      { name: '🔨 Moderation', value: 
-        '`?kick @user [reason]` - Kick from server\n' +
-        '`?mute @user [duration] [reason]` - Timeout user\n' +
-        '`?unmute @user` - Remove timeout\n' +
-        '`?warn @user <reason>` - Issue warning\n' +
-        '`?warnings @user` - View warnings', inline: false },
-      { name: '🧹 Channel Control', value: 
-        '`?purge <amount>` - Delete messages (1-100)\n' +
-        '`?slowmode <seconds>` - Set slowmode\n' +
-        '`?lock` - Lock channel\n' +
-        '`?unlock` - Unlock channel', inline: false }
-    )
-    .setColor(0xFF4500)
-    .setFooter({ text: '🔫 Enforcer+' });
-  
-  await staffCommandsChannel.send({ embeds: [enforcerEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Deputy Commands
-  const deputyEmbed = new EmbedBuilder()
-    .setTitle('🤠 Deputy - Moderator')
-    .setDescription('*Basic moderation tools*')
-    .addFields(
-      { name: '🔨 Moderation', value: 
-        '`?mute @user [duration] [reason]` - Timeout user (max 1 hour)\n' +
-        '`?unmute @user` - Remove timeout\n' +
-        '`?warn @user <reason>` - Issue warning\n' +
-        '`?warnings @user` - View warnings', inline: false },
-      { name: '🧹 Channel Control', value: 
-        '`?purge <amount>` - Delete messages (1-50)\n' +
-        '`?slowmode <seconds>` - Set slowmode (max 60s)', inline: false }
-    )
-    .setColor(0xFFA500)
-    .setFooter({ text: '🤠 Deputy+' });
-  
-  await staffCommandsChannel.send({ embeds: [deputyEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Mechanic Commands
-  const mechanicEmbed = new EmbedBuilder()
-    .setTitle('🔧 Mechanic - Junior Mod')
-    .setDescription('*Helper-level moderation*')
-    .addFields(
-      { name: '🔨 Moderation', value: 
-        '`?warn @user <reason>` - Issue warning\n' +
-        '`?warnings @user` - View warnings', inline: false },
-      { name: '🧹 Channel Control', value: 
-        '`?purge <amount>` - Delete messages (1-25)', inline: false },
-      { name: '📋 Info Commands', value: 
-        '`?userinfo @user` - View user info\n' +
-        '`?serverinfo` - Server statistics', inline: false }
-    )
-    .setColor(0x00CED1)
-    .setFooter({ text: '🔧 Mechanic+' });
-  
-  await staffCommandsChannel.send({ embeds: [mechanicEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Log Channels Guide
-  const logsEmbed = new EmbedBuilder()
-    .setTitle('📋 LOG CHANNELS GUIDE')
-    .setDescription('*What gets logged where*')
-    .addFields(
-      { name: '#nexus-log', value: 'AI decisions, auto-mod actions, threat detection', inline: true },
-      { name: '#mod-actions', value: 'Bans, kicks, mutes, warns by staff', inline: true },
-      { name: '#message-logs', value: 'Deleted & edited messages', inline: true },
-      { name: '#bot-actions', value: 'Bot activities, errors, status', inline: true },
-      { name: '#join-leave', value: 'Member joins and leaves', inline: true },
-      { name: '#verified-log', value: 'New member verifications', inline: true },
-      { name: '#voice-logs', value: 'Voice channel activity', inline: true },
-      { name: '#role-changes', value: 'Role assignments and removals', inline: true },
-      { name: '#nickname-logs', value: 'Nickname changes', inline: true },
-      { name: '#invite-logs', value: 'Invite creation and usage', inline: true },
-      { name: '#scam-detection', value: 'Flagged suspicious content', inline: true },
-      { name: '#channel-logs', value: 'Channel creates/deletes/edits', inline: true },
-      { name: '#audit-log', value: 'All server changes', inline: true },
-      { name: '#transcripts', value: 'Ticket/appeal transcripts', inline: true }
-    )
-    .setColor(0x3498DB)
-    .setFooter({ text: 'All logs are automated by Lester' });
-  
-  await staffCommandsChannel.send({ embeds: [logsEmbed] });
-  await new Promise(r => setTimeout(r, 500));
-  
-  // Useful Tips
-  const tipsEmbed = new EmbedBuilder()
-    .setTitle('💡 STAFF TIPS')
-    .setDescription('*Best practices for moderation*')
-    .addFields(
-      { name: '⚠️ Always Document', value: 'Include reasons for all mod actions - they\'re logged', inline: false },
-      { name: '🤖 Trust Lester', value: 'NEXUS AI handles most issues automatically. Only intervene if needed.', inline: false },
-      { name: '📊 Check History', value: 'Use `?warnings @user` before escalating punishments', inline: false },
-      { name: '🔍 Verify Reports', value: 'Check #message-logs to see context before acting', inline: false },
-      { name: '🤝 Be Fair', value: 'Apply rules consistently. Don\'t play favorites.', inline: false }
-    )
-    .setColor(0x9B59B6)
-    .setFooter({ text: 'Questions? Ask in #staff-chat' });
-  
-  await staffCommandsChannel.send({ embeds: [tipsEmbed] });
-}
-
-async function setupRoleSelection(channels, roles, client) {
+async function setupRoleSelection(channels, roles) {
   const rolesChannel = channels['roles'];
   if (!rolesChannel) return;
   
@@ -1747,279 +998,280 @@ async function setupRoleSelection(channels, roles, client) {
     .setTitle(ROLE_SELECTION.title)
     .setDescription(ROLE_SELECTION.description)
     .setColor(ROLE_SELECTION.color)
-    .setFooter({ text: 'Channels unlock based on your selections!' })
-    .setTimestamp();
+    .setFooter({ text: 'React below to get your roles' });
   
-  const roleMsg = await rolesChannel.send({ embeds: [embed] });
+  const msg = await rolesChannel.send({ embeds: [embed] });
   
   // Add reactions
-  for (const emoji of ROLE_SELECTION.reactions) {
-    await roleMsg.react(emoji);
-    await new Promise(resolve => setTimeout(resolve, 300));
+  for (const reaction of ROLE_SELECTION.reactions) {
+    await msg.react(reaction);
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
-  // Store message ID for reaction handling
-  try {
-    await client.db.query(
-      `INSERT INTO server_config (guild_id, key, value) VALUES ($1, 'role_message_id', $2)
-       ON CONFLICT (guild_id, key) DO UPDATE SET value = $2`,
-      [rolesChannel.guild.id, roleMsg.id]
-    );
-  } catch (e) {
-    console.error('Failed to save role message ID:', e.message);
-  }
+  // Store message ID for reaction role handling
+  return msg.id;
 }
 
 async function setupCounting(guild, channels, client) {
   const countingChannel = channels['counting'];
   if (!countingChannel) return;
   
+  // Initialize counting in database
+  await client.db.query(`
+    INSERT INTO counting (guild_id, current_count, record)
+    VALUES ($1, 0, 0)
+    ON CONFLICT (guild_id) DO NOTHING
+  `, [guild.id]);
+  
+  // Send instructions
   const embed = new EmbedBuilder()
     .setTitle('🔢 Counting Game')
     .setDescription(`**Rules:**
-• Count up by 1
-• Don't count twice in a row
-• If you mess up, we start over from 1
+• Count up from 1
+• One number per person
+• Can't count twice in a row
+• If you mess up, it resets to 1
+• Whoever counts gets the **🏆 The #1** role
 
-**Current Count: 0**
+Current count: **0**
+Record: **0**
 
-Start counting!`)
-    .setColor(0x3498DB);
+*Don't screw this up.*`)
+    .setColor(0x00FF00);
   
   await countingChannel.send({ embeds: [embed] });
-  
-  // Initialize counting in database
-  try {
-    await client.db.query(
-      `INSERT INTO server_config (guild_id, key, value) VALUES ($1, 'counting_current', '0')
-       ON CONFLICT (guild_id, key) DO UPDATE SET value = '0'`,
-      [guild.id]
-    );
-    await client.db.query(
-      `INSERT INTO server_config (guild_id, key, value) VALUES ($1, 'counting_record', '0')
-       ON CONFLICT (guild_id, key) DO UPDATE SET value = GREATEST(value::int, 0)::text`,
-      [guild.id]
-    );
-  } catch (e) {
-    console.error('Failed to init counting:', e.message);
-  }
 }
 
-async function assignBotRoles(guild, roles) {
-  const botMappings = {
-    'Pavel': '1451411814226071552',
-    'Cripps': '1451411731271385163',
-    'Madam Nazar': '1451411607342022831',
-    'Police Chief': '1451847841583595593'
+async function saveConfig(guild, channels, client) {
+  // Map channel names to IDs for logging
+  const logChannels = {
+    'mod-actions': channels['mod-actions']?.id,
+    'message-logs': channels['message-logs']?.id,
+    'bot-actions': channels['bot-actions']?.id,
+    'join-leave': channels['join-leave']?.id,
+    'voice-logs': channels['voice-logs']?.id,
+    'role-changes': channels['role-changes']?.id,
+    'nickname-logs': channels['nickname-logs']?.id,
+    'invite-logs': channels['invite-logs']?.id,
+    'scam-detection': channels['scam-detection']?.id,
+    'channel-logs': channels['channel-logs']?.id,
+    'audit-log': channels['audit-log']?.id,
+    'gun-van': channels['gun-van']?.id,
+    'madam-nazar': channels['madam-nazar']?.id,
+    'counting': channels['counting']?.id
   };
   
-  for (const [roleName, botId] of Object.entries(botMappings)) {
-    const role = roles[roleName];
-    if (!role) continue;
+  await client.db.query(`
+    INSERT INTO server_config (guild_id, log_channels, setup_complete)
+    VALUES ($1, $2, true)
+    ON CONFLICT (guild_id) 
+    DO UPDATE SET log_channels = $2, setup_complete = true
+  `, [guild.id, JSON.stringify(logChannels)]);
+}
+
+// ============================================
+// ASSIGN BOT ROLES
+// ============================================
+async function assignBotRoles(guild, createdRoles) {
+  // Map bot IDs to their role names
+  const botIdRoleMap = {
+    '1451411731271385163': 'Cripps',           // Cripps
+    '1451411607342022831': 'Madam Nazar',      // Madam Nazar
+    '1451411814226071552': 'Pavel',            // Pavel
+    '1451847841583595593': 'Police Chief'      // Police Chief
+  };
+  
+  // Also match by name as fallback
+  const botNameRoleMap = {
+    'lester': 'Lester',
+    'pavel': 'Pavel', 
+    'cripps': 'Cripps',
+    'madam': 'Madam Nazar',
+    'nazar': 'Madam Nazar',
+    'police': 'Police Chief',
+    'chief': 'Police Chief',
+    'sheriff': 'Police Chief'
+  };
+  
+  try {
+    // Fetch all members to make sure we have bots
+    await guild.members.fetch();
     
-    try {
-      const member = await guild.members.fetch(botId).catch(() => null);
-      if (member && !member.roles.cache.has(role.id)) {
-        await member.roles.add(role);
-        console.log(`Assigned ${roleName} role to bot`);
+    const bots = guild.members.cache.filter(m => m.user.bot);
+    console.log(`Found ${bots.size} bots in server`);
+    
+    for (const [id, botMember] of bots) {
+      const botName = botMember.user.username.toLowerCase();
+      let roleName = null;
+      
+      // First try by ID
+      if (botIdRoleMap[id]) {
+        roleName = botIdRoleMap[id];
+      } else {
+        // Then try by name
+        for (const [nameKey, role] of Object.entries(botNameRoleMap)) {
+          if (botName.includes(nameKey)) {
+            roleName = role;
+            break;
+          }
+        }
       }
-    } catch (e) {
-      console.error(`Failed to assign ${roleName} role:`, e.message);
-    }
-  }
-  
-  // Assign Lester role to this bot
-  const lesterRole = roles['Lester'];
-  if (lesterRole) {
-    try {
-      const me = guild.members.me;
-      if (me && !me.roles.cache.has(lesterRole.id)) {
-        await me.roles.add(lesterRole);
-        console.log('Assigned Lester role to self');
-      }
-    } catch (e) {
-      console.error('Failed to assign Lester role:', e.message);
-    }
-  }
-}
-
-async function updateStatsChannels(guild, channels) {
-  const memberCount = guild.memberCount;
-  const onlineCount = guild.members.cache.filter(m => m.presence?.status !== 'offline').size || 0;
-  const botCount = guild.members.cache.filter(m => m.user.bot).size;
-  
-  const updates = [
-    { pattern: '👥 Members:', value: memberCount },
-    { pattern: '🟢 Online:', value: onlineCount },
-    { pattern: '🤖 Bots:', value: botCount }
-  ];
-  
-  for (const update of updates) {
-    const channel = Object.values(channels).find(c => c.name?.startsWith(update.pattern.split(':')[0]));
-    if (channel && channel.type === ChannelType.GuildVoice) {
-      try {
-        await channel.setName(`${update.pattern} ${update.value}`);
-      } catch (e) {
-        console.error(`Failed to update ${update.pattern}:`, e.message);
+      
+      if (roleName) {
+        const role = createdRoles[roleName];
+        if (role && !botMember.roles.cache.has(role.id)) {
+          await botMember.roles.add(role);
+          console.log(`✅ Assigned ${roleName} to ${botMember.user.username}`);
+        }
       }
     }
-  }
-}
-
-async function saveConfig(guild, channels, roles, client) {
-  const channelConfigs = [
-    // Log channels
-    ['mod_log_channel', 'mod-actions'],
-    ['message_log_channel', 'message-logs'],
-    ['join_leave_channel', 'join-leave'],
-    ['verified_log_channel', 'verified-log'],
-    ['voice_log_channel', 'voice-logs'],
-    ['role_log_channel', 'role-changes'],
-    ['nexus_log_channel', 'nexus-log'],
-    ['bot_actions_channel', 'bot-actions'],
-    ['nickname_log_channel', 'nickname-logs'],
-    ['invite_log_channel', 'invite-logs'],
-    ['scam_log_channel', 'scam-detection'],
-    ['channel_log_channel', 'channel-logs'],
-    ['audit_log_channel', 'audit-log'],
-    ['transcripts_channel', 'transcripts'],
-    // Other channels
-    ['gun_van_channel', 'gun-van'],
-    ['nazar_channel', 'madam-nazar'],
-    ['general_channel', 'general-chat'],
-    ['verify_channel', 'verify'],
-    ['rules_channel', 'rules'],
-    ['roles_channel', 'roles'],
-    ['cayo_lfg_channel', 'cayo-lfg'],
-    ['wagon_lfg_channel', 'wagon-lfg'],
-    ['bounty_lfg_channel', 'bounty-lfg'],
-    ['counting_channel', 'counting'],
-    ['staff_commands_channel', 'staff-commands']
-  ];
-  
-  for (const [key, channelName] of channelConfigs) {
-    const channel = channels[channelName];
-    if (channel) {
-      try {
-        await client.db.query(
-          `INSERT INTO server_config (guild_id, key, value) VALUES ($1, $2, $3)
-           ON CONFLICT (guild_id, key) DO UPDATE SET value = $3`,
-          [guild.id, key, channel.id]
-        );
-      } catch (e) {
-        console.error(`Failed to save ${key}:`, e.message);
-      }
-    }
-  }
-  
-  // Save role IDs
-  const roleConfigs = [
-    // Staff roles
-    ['owner_role', '👑 Owner'],
-    ['mastermind_role', '🧠 Mastermind'],
-    ['enforcer_role', '🔫 Enforcer'],
-    ['deputy_role', '🤠 Deputy'],
-    ['mechanic_role', '🔧 Mechanic'],
-    ['vip_role', '💜 VIP'],
-    // Member roles
-    ['verified_role', '✅ Verified'],
-    ['muted_role', 'Muted'],
-    ['fresh_spawn_role', '🆕 Fresh Spawn'],
-    ['patched_in_role', '⭐ Patched In'],
-    ['glitch_veteran_role', '🏆 Glitch Veteran'],
-    ['method_finder_role', '💎 Method Finder'],
-    ['the_one_role', '🏆 The #1'],
-    // Game roles
-    ['gta_role', '💰 Los Santos Hustler'],
-    ['rdo_role', '🐴 Frontier Outlaw'],
-    ['cayo_role', '🏝️ Cayo Grinder'],
-    ['wagon_role', '🛞 Wagon Runner'],
-    ['bounty_role', '💀 Bounty Hunter'],
-    // Platform roles
-    ['ps5_role', '🎮 PlayStation 5'],
-    ['ps4_role', '🎮 PlayStation 4'],
-    ['primary_ps5_role', '⭐ Primary: PS5'],
-    ['primary_ps4_role', '⭐ Primary: PS4']
-  ];
-  
-  for (const [key, roleName] of roleConfigs) {
-    const role = roles[roleName];
-    if (role) {
-      try {
-        await client.db.query(
-          `INSERT INTO server_config (guild_id, key, value) VALUES ($1, $2, $3)
-           ON CONFLICT (guild_id, key) DO UPDATE SET value = $3`,
-          [guild.id, key, role.id]
-        );
-      } catch (e) {
-        console.error(`Failed to save ${key}:`, e.message);
-      }
-    }
+  } catch (error) {
+    console.error('Error assigning bot roles:', error);
   }
 }
 
 // ============================================
-// RESET COMMAND - Delete only bot-created content
+// UPDATE STATS CHANNELS
+// ============================================
+async function updateStatsChannels(guild, channels) {
+  try {
+    // Get member counts
+    const totalMembers = guild.memberCount;
+    const onlineMembers = guild.members.cache.filter(m => 
+      m.presence?.status === 'online' || 
+      m.presence?.status === 'idle' || 
+      m.presence?.status === 'dnd'
+    ).size;
+    const botCount = guild.members.cache.filter(m => m.user.bot).size;
+    
+    // Find stat channels and update names
+    const membersChannel = guild.channels.cache.find(c => c.name.startsWith('👥 Members:'));
+    const onlineChannel = guild.channels.cache.find(c => c.name.startsWith('🟢 Online:'));
+    const botsChannel = guild.channels.cache.find(c => c.name.startsWith('🤖 Bots:'));
+    
+    if (membersChannel) {
+      await membersChannel.setName(`👥 Members: ${totalMembers}`);
+    }
+    if (onlineChannel) {
+      await onlineChannel.setName(`🟢 Online: ${onlineMembers}`);
+    }
+    if (botsChannel) {
+      await botsChannel.setName(`🤖 Bots: ${botCount}`);
+    }
+  } catch (error) {
+    console.error('Error updating stats channels:', error);
+  }
+}
+
+// ============================================
+// RESET COMMAND - Delete everything setup created
 // ============================================
 async function executeReset(message, client) {
+  // Only server owner can reset
   if (message.author.id !== message.guild.ownerId) {
-    return message.reply("Only the server owner can reset the server.");
+    return message.reply("Only the server owner can reset the server. Nice try though.");
   }
 
   const confirmEmbed = new EmbedBuilder()
-    .setColor('#FF6600')
-    .setTitle('⚠️ Server Reset')
-    .setDescription(`**This will delete all bot-created content:**
+    .setColor('#FF0000')
+    .setTitle('⚠️ SERVER RESET')
+    .setDescription(`**This will DELETE everything I created:**
     
-• Categories: SERVER STATS, INFO, GENERAL, GTA, RDO, STAFF LOGS, STAFF
-• All channels in those categories
-• Bot-created roles
+• All categories (INFO, GTA ONLINE, RED DEAD ONLINE, GENERAL, STAFF LOGS, STAFF)
+• All channels inside those categories
+• All roles I created (Mastermind, Enforcer, Deputy, etc.)
 
-**Type \`CONFIRM RESET\` to proceed.**`)
-    .setFooter({ text: 'You have 30 seconds.' });
+**This CANNOT be undone.**
 
-  await message.channel.send({ embeds: [confirmEmbed] });
+React with ✅ to confirm or ❌ to cancel.`)
+    .setFooter({ text: 'You have 30 seconds to decide.' });
 
-  const filter = m => m.author.id === message.author.id && m.content === 'CONFIRM RESET';
-  
+  const confirmMsg = await message.channel.send({ embeds: [confirmEmbed] });
+  await confirmMsg.react('✅');
+  await confirmMsg.react('❌');
+
+  const filter = (reaction, user) => 
+    ['✅', '❌'].includes(reaction.emoji.name) && user.id === message.author.id;
+
   try {
-    const collected = await message.channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] });
-    
-    if (!collected.first()) {
-      return message.channel.send('Reset cancelled.');
+    const collected = await confirmMsg.awaitReactions({ filter, max: 1, time: 30000, errors: ['time'] });
+    const reaction = collected.first();
+
+    if (reaction.emoji.name === '❌') {
+      return confirmMsg.edit({ embeds: [confirmEmbed.setTitle('Reset Cancelled').setColor('#00FF00')] });
     }
 
-    const statusMsg = await message.channel.send('🔄 **RESETTING SERVER...**');
+    // Start reset
+    const statusMsg = await message.channel.send('🔄 Starting server reset...');
     const guild = message.guild;
+
+    // ALL channel names to delete (by name, not by category)
+    const channelNames = [
+      // INFO
+      'welcome', 'rules', 'roles', 'bot-commands', 'verify',
+      // GTA ONLINE
+      'gun-van', 'cayo-lfg', 'heist-lfg', 'gta-chat', 'talk-to-pavel', 'talk-to-lester', 'GTA Voice',
+      // RED DEAD ONLINE
+      'madam-nazar', 'wagon-lfg', 'bounty-lfg', 'rdo-chat', 'talk-to-cripps', 'talk-to-madam', 'talk-to-police-chief', 'RDO Voice',
+      // GENERAL
+      'general-chat', 'counting', 'clips', 'memes', 'General Voice',
+      // STAFF LOGS
+      'nexus-log', 'mod-actions', 'message-logs', 'bot-actions', 'join-leave', 'voice-logs', 
+      'role-changes', 'nickname-logs', 'invite-logs', 'scam-detection', 'channel-logs', 'audit-log',
+      // STAFF
+      'staff-chat', 'staff-commands', 'Staff Voice'
+    ];
+    
+    // Stats channel patterns (match by prefix)
+    const statsPatterns = ['👥 Members:', '🟢 Online:', '🤖 Bots:'];
+
+    // Categories to delete
+    const categoryNames = ['📊 SERVER STATS', '📌 INFO', '💰 GTA ONLINE', '🤠 RED DEAD ONLINE', '💬 GENERAL', '🔒 STAFF LOGS', '👑 STAFF'];
+    
+    // Roles to delete
+    const roleNames = [
+      '🧠 Mastermind', '🔫 Enforcer', '🤠 Deputy', '🔧 Mechanic',
+      '🏆 The #1', '💎 Method Finder', '🏆 Glitch Veteran', '⭐ Patched In', '🆕 Fresh Spawn',
+      '💰 Los Santos Hustler', '🐴 Frontier Outlaw',
+      '🎮 PlayStation 5', '🎮 PlayStation 4', '⭐ Primary: PS5', '⭐ Primary: PS4', '🎮 PS5', '🕹️ PS4',
+      '🏝️ Cayo Grinder', '🚁 Heist Crew', '🛞 Wagon Runner', '💀 Bounty Hunter',
+      'Lester', 'Cripps', 'Pavel', 'Madam Nazar', 'Police Chief', 'Muted', 'Verified',
+      'Counter', '🔢 Counter', 'counter'
+    ];
 
     let deletedChannels = 0;
     let deletedCategories = 0;
     let deletedRoles = 0;
 
+    // Refresh channel cache
     await guild.channels.fetch();
-    await guild.roles.fetch();
 
-    // Category names to delete
-    const categoryNames = SERVER_STRUCTURE.categories.map(c => c.name);
-    
-    // Channel names to delete
-    const channelNames = SERVER_STRUCTURE.categories.flatMap(c => c.channels.map(ch => ch.name));
-    
-    // Role names to delete
-    const roleNames = SERVER_STRUCTURE.roles.map(r => r.name);
-
-    // Delete channels first
+    // Delete channels by NAME (more aggressive)
     await statusMsg.edit('🗑️ Deleting channels...');
     
     for (const channelName of channelNames) {
-      const channels = guild.channels.cache.filter(c => c.name === channelName || c.name.startsWith(channelName.split(':')[0]));
+      const channels = guild.channels.cache.filter(c => c.name === channelName);
       for (const [, channel] of channels) {
+        try {
+          await channel.delete();
+          deletedChannels++;
+          await new Promise(r => setTimeout(r, 200)); // Small delay to avoid rate limits
+        } catch (e) {
+          console.error(`Failed to delete channel ${channel.name}:`, e.message);
+        }
+      }
+    }
+    
+    // Delete stats channels by pattern (Members: X, Online: X, Bots: X)
+    for (const pattern of statsPatterns) {
+      const statsChannels = guild.channels.cache.filter(c => c.name.startsWith(pattern));
+      for (const [, channel] of statsChannels) {
         try {
           await channel.delete();
           deletedChannels++;
           await new Promise(r => setTimeout(r, 200));
         } catch (e) {
-          console.error(`Failed to delete channel ${channel.name}:`, e.message);
+          console.error(`Failed to delete stats channel ${channel.name}:`, e.message);
         }
       }
     }
@@ -2041,7 +1293,7 @@ async function executeReset(message, client) {
 
     // Delete roles
     await statusMsg.edit('🗑️ Deleting roles...');
-    await guild.roles.fetch();
+    await guild.roles.fetch(); // Refresh role cache
     
     for (const roleName of roleNames) {
       const role = guild.roles.cache.find(r => r.name === roleName);
@@ -2049,7 +1301,7 @@ async function executeReset(message, client) {
         try {
           await role.delete();
           deletedRoles++;
-          await new Promise(r => setTimeout(r, 300));
+          await new Promise(r => setTimeout(r, 300)); // Delay to avoid rate limits
         } catch (e) {
           console.error(`Failed to delete role ${roleName}:`, e.message);
         }
@@ -2077,11 +1329,12 @@ You can now run \`?setup\` again to start fresh.`)
     await statusMsg.edit({ content: null, embeds: [doneEmbed] });
 
   } catch (error) {
-    if (error.message === 'time') {
-      return message.channel.send('Reset cancelled - timed out.');
-    }
     console.error('Reset error:', error);
-    message.channel.send('Reset encountered an error. Check if Lester has Administrator permission.');
+    try {
+      await message.channel.send('Reset encountered an error. Check if Lester has Administrator permission and is at the top of the roles list.');
+    } catch (e) {
+      console.error('Could not send error message:', e);
+    }
   }
 }
 
@@ -2089,6 +1342,7 @@ You can now run \`?setup\` again to start fresh.`)
 // NUKE COMMAND - Delete EVERYTHING
 // ============================================
 async function executeNuke(message, client) {
+  // Only server owner can nuke
   if (message.author.id !== message.guild.ownerId) {
     return message.reply("Only the server owner can nuke the server.");
   }
@@ -2100,7 +1354,7 @@ async function executeNuke(message, client) {
     
 • ALL channels (except this one temporarily)
 • ALL categories
-• ALL roles (except @everyone and bot integration roles)
+• ALL roles (except @everyone and bot roles)
 
 **This CANNOT be undone.**
 
@@ -2126,6 +1380,7 @@ Type \`CONFIRM NUKE\` to proceed.`)
     let deletedCategories = 0;
     let deletedRoles = 0;
 
+    // Refresh caches
     await guild.channels.fetch();
     await guild.roles.fetch();
 
@@ -2134,7 +1389,7 @@ Type \`CONFIRM NUKE\` to proceed.`)
     
     const allChannels = guild.channels.cache.filter(c => 
       c.id !== currentChannelId && 
-      c.type !== ChannelType.GuildCategory
+      c.type !== 4 // Not a category (delete those separately)
     );
     
     for (const [, channel] of allChannels) {
@@ -2150,7 +1405,7 @@ Type \`CONFIRM NUKE\` to proceed.`)
     // Delete ALL categories
     await statusMsg.edit('🗑️ Deleting all categories...');
     
-    const allCategories = guild.channels.cache.filter(c => c.type === ChannelType.GuildCategory);
+    const allCategories = guild.channels.cache.filter(c => c.type === 4);
     
     for (const [, category] of allCategories) {
       try {
@@ -2167,8 +1422,8 @@ Type \`CONFIRM NUKE\` to proceed.`)
     
     const allRoles = guild.roles.cache.filter(r => 
       r.name !== '@everyone' && 
-      !r.managed &&
-      r.position < guild.members.me.roles.highest.position
+      !r.managed && // Not a bot integration role
+      r.position < guild.members.me.roles.highest.position // Can actually delete it
     );
     
     for (const [, role] of allRoles) {
@@ -2210,12 +1465,264 @@ Server is now empty. Run \`?setup\` to rebuild.`)
   }
 }
 
-module.exports = { 
-  execute, 
-  executeReset, 
-  executeNuke, 
-  updateStatsChannels,
-  // Aliases for index.js
-  reset: executeReset,
-  nuke: executeNuke
-};
+// ============================================
+// UPDATE BOT COMMANDS CHANNEL ONLY
+// ============================================
+async function updateBotCommands(message, client) {
+  const BOT_COMMANDS_CHANNEL_ID = '1453304719605895169';
+  
+  try {
+    const channel = await client.channels.fetch(BOT_COMMANDS_CHANNEL_ID);
+    if (!channel) {
+      return message.channel.send('❌ Bot commands channel not found!');
+    }
+    
+    await message.channel.send('🔄 Updating bot commands channel...');
+    
+    // Delete old messages (up to 100)
+    const oldMessages = await channel.messages.fetch({ limit: 100 });
+    if (oldMessages.size > 0) {
+      await channel.bulkDelete(oldMessages, true).catch(() => {
+        // If bulk delete fails (messages too old), delete one by one
+        oldMessages.forEach(async (msg) => {
+          await msg.delete().catch(() => {});
+        });
+      });
+    }
+    
+    // Wait a moment for deletions
+    await new Promise(r => setTimeout(r, 1000));
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // HEADER
+    // ═══════════════════════════════════════════════════════════════════════
+    const headerEmbed = new EmbedBuilder()
+      .setTitle('📋 THE UNPATCHED METHOD - BOT COMMANDS')
+      .setDescription(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🧠 **6 AI-Powered Bots with HiveMind Intelligence**
+They understand natural language and remember you.
+
+📊 **FEATURE COUNT: 350+**
+Every decision powered by AI
+
+✨ **Features:**
+◆ Bots remember you across conversations
+◆ Economy system with gambling & betting
+◆ AI image/video generation
+◆ Reputation tracking between players
+◆ Predictive analytics for optimal LFG times
+◆ Enterprise-grade security system
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+      .setColor(0x5865F2);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ECONOMY SYSTEM
+    // ═══════════════════════════════════════════════════════════════════════
+    const economyEmbed = new EmbedBuilder()
+      .setTitle('💰 ECONOMY SYSTEM')
+      .setDescription(`Earn, gamble, and compete for riches!\nEveryone starts with 1,000 chips.`)
+      .setColor(0xFFD700)
+      .addFields(
+        { name: '💵 Earning Money', value: '`?daily` - Daily reward + streak bonus\n`?work` - Work for chips (30m cooldown)\n`?crime` - Risk it all (1hr cooldown)', inline: false },
+        { name: '🎰 Gambling', value: '`?slots [bet]` - Slot machine\n`?coinflip [bet] h/t` - 50/50 flip\n`?blackjack [bet]` - Play 21\n`?roulette [bet] red/black/0-36`', inline: false },
+        { name: '💳 Banking', value: '`?balance` - Check your chips\n`?pay @user [amount]` - Send chips\n`?richest` - Leaderboard', inline: false }
+      );
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // AI IMAGE & VIDEO
+    // ═══════════════════════════════════════════════════════════════════════
+    const aiGenEmbed = new EmbedBuilder()
+      .setTitle('🎨 AI IMAGE & VIDEO GENERATION')
+      .setDescription(`Create custom content with Kling AI!\nPowered by advanced AI models.`)
+      .setColor(0x9B59B6)
+      .addFields(
+        { name: '🖼️ Image Generation', value: '`?generate [prompt]` - Create any image\n`?wanted @user` - GTA wanted poster\n`?bounty @user` - RDO bounty poster\n`?victory [text]` - Victory screen', inline: false },
+        { name: '🎬 Video Generation', value: '`?video [prompt]` - Create AI video\n*(Takes 1-2 minutes)*', inline: false }
+      );
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // REPUTATION & ANALYTICS
+    // ═══════════════════════════════════════════════════════════════════════
+    const repEmbed = new EmbedBuilder()
+      .setTitle('📈 REPUTATION & ANALYTICS')
+      .setDescription(`Track your grinding stats and connections!`)
+      .setColor(0x3498DB)
+      .addFields(
+        { name: '⭐ Reputation', value: '`?rep @user` - View reputation\n`?rate @user 1-5` - Rate a player\n`?partners` - Your frequent crew\n`?connection @user` - History together', inline: false },
+        { name: '🔮 Predictions', value: '`?mytime` - Your best LFG time\n`?peaktimes` - Server peak hours\n`?plan [mins] [players]` - Optimal grinding route', inline: false },
+        { name: '📊 Stats', value: '`?stats [@user]` - Activity stats\n`?leaderboard` - Server leaderboard', inline: false }
+      );
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // LESTER
+    // ═══════════════════════════════════════════════════════════════════════
+    const lesterEmbed = new EmbedBuilder()
+      .setTitle('🧠 LESTER - The Mastermind')
+      .setDescription(`**Server Management, Economy & AI**\nHe watches everything.`)
+      .setColor(0xFFD700)
+      .addFields(
+        { name: '💬 Chat', value: '#talk-to-lester', inline: true },
+        { name: '🛡️ Moderation', value: 'Fully automatic', inline: true },
+        { name: '\u200b', value: '\u200b', inline: true },
+        { name: '📊 Utility', value: '`?help` - All commands\n`?ping` - Latency\n`?serverinfo` - Server stats\n`?userinfo @user` - User info\n`?avatar @user` - Get avatar', inline: true },
+        { name: '🔫 Gun Van', value: '`?gunvan` - Today\'s location & stock', inline: true },
+        { name: '🔢 Counting', value: '`?countrecord` - View record', inline: true },
+        { name: '🔨 Moderation', value: '`?kick` `?ban` `?unban`\n`?mute` `?unmute` `?timeout`\n`?warn` `?warnings` `?clearwarnings`\n`?purge [num]` `?slowmode [sec]`\n`?lock` `?unlock`', inline: false },
+        { name: '🔍 Investigation', value: '`?investigate @user` - Deep dive\n`?evidence @user` - View evidence\n`?watchlist` - Watched users\n`?predict @user` - Behavior prediction', inline: true },
+        { name: '🚨 Scam Detection', value: '`?checklink [url]` - Check link\n`?addscam [url]` - Flag scam\n`?scamlist` - View all scams', inline: true },
+        { name: '🧠 Memory', value: '`?memory [@user]` - What bots remember\n`?forgetme` - Delete your data', inline: true },
+        { name: '🎙️ Voice', value: '`?voice join` - Join VC\n`?voice leave` - Leave VC\n`?speak [text]` - TTS in VC', inline: true },
+        { name: '⚙️ Admin Setup', value: '`?setup` - Full server setup\n`?reset` - Soft reset\n`?nuke` - Hard reset\n`?setupstats` `?setupactivities`\n`?setuppremium` `?setuptiers` `?setuptos`', inline: true },
+        { name: '🚫 Blacklist', value: '`?blacklist @user`\n`?unblacklist @user`\n`?blacklistcheck @user`', inline: true }
+      )
+      .setFooter({ text: 'Lester handles moderation, appeals, and daily reports automatically' });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // BURNER PHONE
+    // ═══════════════════════════════════════════════════════════════════════
+    const burnerEmbed = new EmbedBuilder()
+      .setTitle('📱 BURNER PHONE - The Support Line')
+      .setDescription(`**Secure Modmail & SOC-Level Security**\n*"Your message has been delivered..."*`)
+      .setColor(0x2ECC71)
+      .addFields(
+        { name: '📬 Contact Staff', value: 'DM this bot directly', inline: true },
+        { name: '🔒 Security', value: '7 threat intel APIs', inline: true },
+        { name: '\u200b', value: '\u200b', inline: true },
+        { name: '📨 How It Works', value: '• DM Burner Phone with your issue\n• Staff sees when you\'re typing\n• You see when staff is viewing\n• Replies from "The Unpatched Method Staff"', inline: false },
+        { name: '🛡️ Security Features', value: '• Phishing & malware detection\n• Fake Discord/Steam link blocking\n• Dangerous file scanning\n• Social engineering detection', inline: false },
+        { name: '⌨️ Staff Commands', value: '**Tickets:** `?close` `?claim` `?tickets` `?dm @user`\n**Notes:** `?note @user` `?notes @user` `?history @user`\n**Tools:** `?snippet` `?stats` `?analytics`\n**Advanced:** `?priority` `?transfer` `?schedule` `?link`\n**Status:** `?away` `?back`\n**Admin:** `?setupmodmail` `?blacklist @user`', inline: false }
+      )
+      .setFooter({ text: 'Enterprise-grade security • SOC-level threat detection' });
+  
+    // ═══════════════════════════════════════════════════════════════════════
+    // PAVEL
+    // ═══════════════════════════════════════════════════════════════════════
+    const pavelEmbed = new EmbedBuilder()
+      .setTitle('🦈 PAVEL - The Submarine Captain')
+      .setDescription(`**GTA Online Heist LFG**\n*"Ah, Kapitan! Let us make some money, yes?"*`)
+      .setColor(0x1ABC9C)
+      .addFields(
+        { name: '💬 Chat', value: '#talk-to-pavel', inline: true },
+        { name: '📍 LFG Channel', value: '#cayo-lfg', inline: true },
+        { name: '\u200b', value: '\u200b', inline: true },
+        { name: '🗣️ Natural Language', value: 'Just say *"anyone wanna do cayo?"* or *"need 2 for heist"* - Pavel understands!', inline: false },
+        { name: '🎮 LFG Commands', value: '`?cayo` - Cayo Perico heist\n`?casino` - Casino heist\n`?heist` - Any heist\n`?bogdan` - Act 2 Bogdan', inline: true },
+        { name: '✅ Session', value: '`?done` - Complete (+rep)\n`?cancel` - Cancel session', inline: true },
+        { name: '💎 Payouts', value: 'Pink Diamond: $1.43M\nBearer Bonds: $1.21M\nGold: ~$500K/stack', inline: true }
+      )
+      .setFooter({ text: 'Voice channels auto-created • Reputation tracked' })
+      .setFooter({ text: 'Reputation system tracks reliable players • Voice channels auto-created' });
+  
+    // Cripps Commands
+    const crippsEmbed = new EmbedBuilder()
+      .setTitle('🏕️ CRIPPS - The Trader')
+      .setDescription(`**Red Dead Online Wagon LFG**\n*"Did I ever tell you about the time I..."*`)
+      .setColor(0x8B4513)
+      .addFields(
+        { name: '💬 Chat', value: '#talk-to-cripps', inline: true },
+        { name: '📍 LFG Channel', value: '#wagon-lfg', inline: true },
+        { name: '\u200b', value: '\u200b', inline: true },
+        { name: '🗣️ Natural Language', value: 'Just say *"need help with wagon"* or *"running deliveries"* - Cripps understands!', inline: false },
+        { name: '🚚 LFG Commands', value: '`?wagon` - Wagon delivery\n`?delivery` - Same as wagon\n`?trader` - Trader activities\n`?moonshine` - Moonshine delivery\n`?posse` - General posse', inline: true },
+        { name: '✅ Session', value: '`?done` - Complete (+rep)\n`?cancel` - Cancel', inline: true },
+        { name: '💰 Payouts', value: 'Small: ~$62.50\nMedium: ~$150\nLarge: ~$500-625', inline: true }
+      )
+      .setFooter({ text: 'Voice channels auto-created • Reputation tracked' });
+  
+    // ═══════════════════════════════════════════════════════════════════════
+    // POLICE CHIEF
+    // ═══════════════════════════════════════════════════════════════════════
+    const chiefEmbed = new EmbedBuilder()
+      .setTitle('🤠 POLICE CHIEF - The Lawman')
+      .setDescription(`**Red Dead Online Bounty LFG**\n*"Justice doesn't sleep. Neither do I."*`)
+      .setColor(0xC0392B)
+      .addFields(
+        { name: '💬 Chat', value: '#talk-to-chief', inline: true },
+        { name: '📍 LFG Channel', value: '#bounty-lfg', inline: true },
+        { name: '\u200b', value: '\u200b', inline: true },
+        { name: '🗣️ Natural Language', value: 'Just say *"anyone down for etta doyle?"* or *"need bounty crew"* - the Chief understands!', inline: false },
+        { name: '🎯 LFG Commands', value: '`?bounty` - Bounty hunting\n`?legendary [name]` - Legendary bounty\n`?etta` `?owlhoot` `?cecil` - Specific legendaries\n`?posse` - General posse', inline: true },
+        { name: '✅ Session', value: '`?done` - Complete (+rep)\n`?cancel` - Cancel', inline: true },
+        { name: '💰 Payouts', value: '12 min: ~$40 + 0.24g\n30 min: ~$60 + 0.48g\nLegendary: $225', inline: true }
+      )
+      .setFooter({ text: 'Voice channels auto-created • Reputation tracked' });
+  
+    // ═══════════════════════════════════════════════════════════════════════
+    // MADAM NAZAR
+    // ═══════════════════════════════════════════════════════════════════════
+    const nazarEmbed = new EmbedBuilder()
+      .setTitle('🔮 MADAM NAZAR - The Fortune Teller')
+      .setDescription(`**Red Dead Online Collector**\n*"The spirits guide me..."*`)
+      .setColor(0x800080)
+      .addFields(
+        { name: '💬 Chat', value: '#talk-to-nazar', inline: true },
+        { name: '📍 Daily Location', value: '#madam-nazar', inline: true },
+        { name: '\u200b', value: '\u200b', inline: true },
+        { name: '🗣️ Natural Language', value: 'Just ask *"where is nazar?"* or *"nazar location"* - she\'ll tell you!', inline: false },
+        { name: '📍 Commands', value: '`?nazar` - Today\'s location\n`?location` - Same as above\n`?where` - Same thing', inline: true },
+        { name: '🗺️ Collector Map', value: '[Jean Ropke Map](https://jeanropke.github.io/RDR2CollectorsMap/)', inline: true }
+      )
+      .setFooter({ text: 'Location changes daily at midnight UTC' });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PREMIUM
+    // ═══════════════════════════════════════════════════════════════════════
+    const premiumEmbed = new EmbedBuilder()
+      .setTitle('👑 PREMIUM MEMBERSHIP')
+      .setDescription(`Support the server & unlock exclusive perks!`)
+      .setColor(0xF1C40F)
+      .addFields(
+        { name: '💎 Inner Circle', value: '$9.99/mo', inline: true },
+        { name: '💎 Inner Circle+', value: '$19.99/mo', inline: true },
+        { name: '💎 Lifetime VIP', value: '$149.99 once', inline: true },
+        { name: '✨ Perks Include', value: '◆ VIP lounge access\n◆ Priority LFG matching\n◆ Exclusive AI features\n◆ Custom wanted posters\n◆ Direct support\n◆ Early access to new features', inline: false }
+      )
+      .setFooter({ text: 'Check #premium-info for details!' });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // QUICK TIPS
+    // ═══════════════════════════════════════════════════════════════════════
+    const tipsEmbed = new EmbedBuilder()
+      .setTitle('💡 QUICK TIPS')
+      .setDescription(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💬 **Talk naturally** - Bots understand context
+📸 **Post screenshots** - Bots can analyze images
+💰 **Start with \`?daily\`** - Free chips every day
+⭐ **Rate players** - Build your reputation
+📊 **Use \`?plan\`** - Get optimal grinding routes
+📱 **DM Burner Phone** - Contact staff securely
+🧠 **Use \`?memory\`** - See what bots remember about you
+🎙️ **Use \`?voice join\`** - Bots can join voice chat!
+
+Need help? Just ask any bot!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+      .setColor(0x5865F2)
+      .setFooter({ text: 'The Unpatched Method • Ultimate Edition • 6 Bots • 350+ Features' });
+  
+    // Send all embeds
+    await channel.send({ embeds: [headerEmbed] });
+    await channel.send({ embeds: [economyEmbed] });
+    await channel.send({ embeds: [aiGenEmbed] });
+    await channel.send({ embeds: [repEmbed] });
+    await channel.send({ embeds: [lesterEmbed] });
+    await channel.send({ embeds: [burnerEmbed] });
+    await channel.send({ embeds: [pavelEmbed] });
+    await channel.send({ embeds: [crippsEmbed] });
+    await channel.send({ embeds: [chiefEmbed] });
+    await channel.send({ embeds: [nazarEmbed] });
+    await channel.send({ embeds: [premiumEmbed] });
+    await channel.send({ embeds: [tipsEmbed] });
+    
+    await message.channel.send('✅ Bot commands channel updated with all features!');
+    
+  } catch (error) {
+    console.error('Update bot commands error:', error);
+    message.channel.send('❌ Failed to update bot commands. Check permissions.');
+  }
+}
+
+module.exports = { execute, executeReset, executeNuke, updateStatsChannels, updateBotCommands };
