@@ -3151,19 +3151,18 @@ client.on(Events.GuildMemberAdd, async (member) => {
     }
     
     // ═══════════════════════════════════════════════════════════════
-    // GENERAL CHAT - AI Welcome Message + Role Mentions
+    // GENERAL CHAT - AI Welcome Message
     // ═══════════════════════════════════════════════════════════════
-    let generalChannel = guild.channels.cache.find(c => 
-      c.name === 'general' || c.name === 'general-chat' || c.name === 'chat'
+    const GENERAL_CHAT_ID = '1453304724681134163';
+    let generalChannel = guild.channels.cache.get(GENERAL_CHAT_ID) || guild.channels.cache.find(c => 
+      c.name === 'general-chat' || c.name === 'general' || c.name === 'chat' || c.name === 'lounge'
     );
     
     if (generalChannel) {
       // Find roles to mention
       const welcomerRole = guild.roles.cache.find(r => 
         r.name.toLowerCase().includes('welcomer') || 
-        r.name.toLowerCase().includes('greeter') ||
-        r.name.toLowerCase().includes('staff') ||
-        r.name.toLowerCase().includes('mod')
+        r.name.toLowerCase().includes('greeter')
       );
       
       // Pick random welcome message
@@ -3196,7 +3195,69 @@ client.on(Events.GuildMemberAdd, async (member) => {
       await generalChannel.send(welcomeText);
     }
     
-    // DMs are now handled by Burner Phone bot
+    // ═══════════════════════════════════════════════════════════════
+    // DM - Welcome message with roles info
+    // ═══════════════════════════════════════════════════════════════
+    try {
+      // Find roles and verify channels
+      const rolesChannel = guild.channels.cache.find(c => c.name === 'roles' || c.name === 'get-roles' || c.name === 'self-roles');
+      const verifyChannel = guild.channels.cache.find(c => c.name === 'verify' || c.name === 'verification');
+      const rulesChannel = guild.channels.cache.find(c => c.name === 'rules' || c.name === 'info');
+      
+      const welcomeDM = new EmbedBuilder()
+        .setTitle(`👋 Welcome to ${guild.name}!`)
+        .setDescription(`Hey **${member.user.username}**, welcome to the server!
+
+**🚀 GET STARTED:**`)
+        .setColor(0xFF6B35)
+        .setThumbnail(guild.iconURL({ dynamic: true }))
+        .setTimestamp();
+      
+      // Add verification step if channel exists
+      if (verifyChannel) {
+        welcomeDM.addFields({
+          name: '1️⃣ Verify Yourself',
+          value: `Go to <#${verifyChannel.id}> and click the verify button to access the server.`,
+          inline: false
+        });
+      }
+      
+      // Add roles step
+      if (rolesChannel) {
+        welcomeDM.addFields({
+          name: verifyChannel ? '2️⃣ Get Your Roles' : '1️⃣ Get Your Roles',
+          value: `Head to <#${rolesChannel.id}> and pick your roles:
+• 🎮 What games you play (GTA/RDO)
+• 💻 Your platform (PC/Xbox/PS)
+• 🔔 What you want pings for`,
+          inline: false
+        });
+      }
+      
+      // Add rules step if exists
+      if (rulesChannel) {
+        welcomeDM.addFields({
+          name: `${verifyChannel ? '3️⃣' : rolesChannel ? '2️⃣' : '1️⃣'} Read the Rules`,
+          value: `Check out <#${rulesChannel.id}> to know what's allowed.`,
+          inline: false
+        });
+      }
+      
+      welcomeDM.addFields({
+        name: '💡 Pro Tips',
+        value: `• Use \`?daily\` in #casino for free chips
+• DM <@1462303194863505521> (Burner Phone) to contact staff
+• Talk naturally to the bots - they understand!`,
+        inline: false
+      });
+      
+      welcomeDM.setFooter({ text: 'The Unpatched Method • Questions? DM Burner Phone!' });
+      
+      await member.send({ embeds: [welcomeDM] });
+    } catch (dmError) {
+      // Can't DM user, that's fine
+      console.log(`[WELCOME] Couldn't DM ${member.user.tag} - DMs likely closed`);
+    }
     
   } catch (error) {
     console.error('[WELCOME] Error:', error.message);
