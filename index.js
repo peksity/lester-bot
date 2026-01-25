@@ -822,7 +822,7 @@ client.on(Events.MessageCreate, async (message) => {
       'setup': () => setupHandler.execute(message, args, client),
       'nuke': () => setupHandler.nuke(message, args, client),
       'reset': () => setupHandler.reset(message, args, client),
-      
+      'rolesinfo': () => setupHandler.postRolesInfo(message, args, client),
       // MODERATION
       'kick': () => moderationHandler.kick(message, args, client),
       'ban': () => moderationHandler.ban(message, args, client),
