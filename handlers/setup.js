@@ -20,10 +20,10 @@ const {
 const SERVER_STRUCTURE = {
   roles: [
     // Staff Roles (highest)
-    { name: '🧠 Mastermind', color: '#FF0000', permissions: 'ADMIN', hoist: true },
-    { name: '🔫 Enforcer', color: '#FF4500', permissions: 'ADMIN', hoist: true },
-    { name: '🤠 Deputy', color: '#FFA500', permissions: 'MOD', hoist: true },
-    { name: '🔧 Mechanic', color: '#00CED1', permissions: 'MOD', hoist: true },
+    { name: '⭐ Senior Administrator', color: '#FF0000', permissions: 'ADMIN', hoist: true },
+    { name: '🛡️ Administrator', color: '#FF4500', permissions: 'ADMIN', hoist: true },
+    { name: '⚔️ Moderator', color: '#FFA500', permissions: 'MOD', hoist: true },
+    { name: '🔧 Junior Moderator', color: '#00CED1', permissions: 'MOD', hoist: true },
     
     // Bot Roles (right under staff, admin perms, hoisted)
     { name: 'Lester', color: '#FFD700', permissions: 'BOT', hoist: true },
@@ -215,7 +215,7 @@ Don't flood channels. Don't spam pings. Don't be annoying.
 LFG goes in LFG channels. Chat goes in chat channels. It's not complicated.
 
 **8. Listen to Staff**
-🧠 Mastermind, 🔫 Enforcer, 🤠 Deputy, 🔧 Mechanic - if they tell you something, listen.
+⭐ Senior Administrator, 🛡️ Administrator, ⚔️ Moderator, 🔧 Junior Moderator - if they tell you something, listen.
 
 **9. No Advertising**
 Don't promote other servers, YouTube channels, or whatever else. Nobody cares.
@@ -363,7 +363,7 @@ Existing channels will NOT be deleted, but this will add a lot of new stuff.
 All logging is now active in the Staff Logs category.
 
 **Next Steps:**
-1. Give yourself the 🧠 Mastermind role
+1. Give yourself the ⭐ Senior Administrator role
 2. Test the LFG commands in the appropriate channels
 
 The server is ready. Don't screw it up.`)
@@ -508,7 +508,7 @@ async function createCategoriesAndChannels(guild, roles) {
 async function setupPermissions(guild, roles, channels) {
   const everyoneRole = guild.roles.everyone;
   const mutedRole = roles['Muted'];
-  const staffRoles = [roles['🧠 Mastermind'], roles['🔫 Enforcer'], roles['🤠 Deputy'], roles['🔧 Mechanic']].filter(Boolean);
+  const staffRoles = [roles['⭐ Senior Administrator'], roles['🛡️ Administrator'], roles['⚔️ Moderator'], roles['🔧 Junior Moderator']].filter(Boolean);
   const botRoles = [roles['Lester'], roles['Pavel'], roles['Cripps'], roles['Madam Nazar'], roles['Police Chief']].filter(Boolean);
   
   // Setup permissions for each channel based on type
@@ -1179,7 +1179,7 @@ async function executeReset(message, client) {
     
 • All categories (INFO, GTA ONLINE, RED DEAD ONLINE, GENERAL, STAFF LOGS, STAFF)
 • All channels inside those categories
-• All roles I created (Mastermind, Enforcer, Deputy, etc.)
+• All roles I created (Senior Administrator, Administrator, Moderator, etc.)
 
 **This CANNOT be undone.**
 
@@ -1230,7 +1230,7 @@ React with ✅ to confirm or ❌ to cancel.`)
     
     // Roles to delete
     const roleNames = [
-      '🧠 Mastermind', '🔫 Enforcer', '🤠 Deputy', '🔧 Mechanic',
+      '⭐ Senior Administrator', '🛡️ Administrator', '⚔️ Moderator', '🔧 Junior Moderator',
       '🏆 The #1', '💎 Method Finder', '🏆 Glitch Veteran', '⭐ Patched In', '🆕 Fresh Spawn',
       '💰 Los Santos Hustler', '🐴 Frontier Outlaw',
       '🎮 PlayStation 5', '🎮 PlayStation 4', '⭐ Primary: PS5', '⭐ Primary: PS4', '🎮 PS5', '🕹️ PS4',
@@ -1725,4 +1725,236 @@ Need help? Just ask any bot!
   }
 }
 
-module.exports = { execute, executeReset, executeNuke, updateStatsChannels, updateBotCommands };
+// ============================================
+// POST ROLES INFO COMMAND
+// Posts/updates the roles-info channel content
+// Usage: ?rolesinfo [channel-id]
+// ============================================
+async function postRolesInfo(message, args, client) {
+  // Check if user has admin permissions
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply("You need Administrator permissions to use this command.");
+  }
+
+  // Get target channel - either from args or default
+  let channel;
+  if (args[0]) {
+    channel = message.guild.channels.cache.get(args[0]) || 
+              message.guild.channels.cache.find(c => c.name === args[0] || c.name === 'roles-info');
+  } else {
+    channel = message.guild.channels.cache.find(c => c.name === 'roles-info');
+  }
+
+  if (!channel) {
+    return message.reply("Couldn't find the roles-info channel. Provide a channel ID or make sure #roles-info exists.");
+  }
+
+  await message.channel.send(`📝 Posting roles info to ${channel}...`);
+
+  try {
+    // Delete old messages in channel (up to 100)
+    const oldMessages = await channel.messages.fetch({ limit: 100 });
+    if (oldMessages.size > 0) {
+      await channel.bulkDelete(oldMessages, true).catch(() => {
+        // If bulk delete fails (messages too old), delete one by one
+        oldMessages.forEach(async (msg) => {
+          try { await msg.delete(); } catch (e) {}
+        });
+      });
+    }
+
+    await new Promise(r => setTimeout(r, 1000));
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESSAGE 1: STAFF HIERARCHY
+    // ═══════════════════════════════════════════════════════════════
+    const staffEmbed = new EmbedBuilder()
+      .setTitle('👑 STAFF HIERARCHY')
+      .setDescription('The people who keep this place running.')
+      .addFields(
+        { name: '👑 Owner', value: 'Server creator. Ultimate authority.', inline: false },
+        { name: '⭐ Senior Administrator', value: 'Full server control.', inline: false },
+        { name: '🛡️ Administrator', value: 'Handles serious issues.', inline: false },
+        { name: '⚔️ Moderator', value: 'Day-to-day moderation.', inline: false },
+        { name: '🔧 Junior Moderator', value: 'Helps with basic tasks.', inline: false }
+      )
+      .setColor(0xFF6B35)
+      .setFooter({ text: 'Listen to staff. They\'re here to help.' });
+
+    await channel.send({ embeds: [staffEmbed] });
+    await new Promise(r => setTimeout(r, 500));
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESSAGE 2: TIME-BASED PROGRESSION
+    // ═══════════════════════════════════════════════════════════════
+    const timeEmbed = new EmbedBuilder()
+      .setTitle('⏰ TIME-BASED PROGRESSION')
+      .setDescription('Ranks earned by time in the server. Be patient, stay active!')
+      .addFields(
+        { name: '🆕 Fresh Spawn', value: '**0-7 days**\nNew member. Limited access.\nCan\'t post in #clips yet.', inline: false },
+        { name: '⭐ Patched In', value: '**7+ days**\nTrusted member.\nUnlocks #clips channel!', inline: false },
+        { name: '🏆 Glitch Veteran', value: '**30+ days**\nRespected member.\nYou\'re part of the crew.', inline: false },
+        { name: '💎 Method Finder', value: '**90+ days**\nSenior member.\nYou\'ve proven yourself.', inline: false }
+      )
+      .setColor(0x4CAF50)
+      .setFooter({ text: 'Ranks are automatic. Just keep grinding!' });
+
+    await channel.send({ embeds: [timeEmbed] });
+    await new Promise(r => setTimeout(r, 500));
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESSAGE 3: GTA HEIST RANKS
+    // ═══════════════════════════════════════════════════════════════
+    const gtaEmbed = new EmbedBuilder()
+      .setTitle('🏝️ GTA HEIST RANKS')
+      .setDescription('Earn these by completing Cayo Perico heists!\nRanks are awarded automatically when you complete sessions in #cayo-lfg.')
+      .addFields(
+        { name: '🐟 Small Fry', value: '5+ completions', inline: true },
+        { name: '💳 Shark Card Killer', value: '25+ completions', inline: true },
+        { name: '🐋 Whale Hunter', value: '50+ completions', inline: true },
+        { name: '😈 El Rubio\'s Nightmare', value: '100+ completions', inline: true }
+      )
+      .setColor(0x00BCD4)
+      .setFooter({ text: 'Complete sessions using the ✅ Complete button!' });
+
+    await channel.send({ embeds: [gtaEmbed] });
+    await new Promise(r => setTimeout(r, 500));
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESSAGE 4: WAGON DELIVERY RANKS
+    // ═══════════════════════════════════════════════════════════════
+    const wagonEmbed = new EmbedBuilder()
+      .setTitle('🛞 WAGON DELIVERY RANKS')
+      .setDescription('Earn these by completing wagon deliveries!')
+      .addFields(
+        { name: '📦 Delivery Boy', value: '5+ completions', inline: true },
+        { name: '🚚 Supply Runner', value: '25+ completions', inline: true },
+        { name: '💰 Trade Baron', value: '50+ completions', inline: true },
+        { name: '🤝 Cripps\' Partner', value: '100+ completions', inline: true }
+      )
+      .setColor(0x795548)
+      .setFooter({ text: 'Complete sessions using the ✅ Complete button!' });
+
+    await channel.send({ embeds: [wagonEmbed] });
+    await new Promise(r => setTimeout(r, 500));
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESSAGE 5: BOUNTY HUNTER RANKS
+    // ═══════════════════════════════════════════════════════════════
+    const bountyEmbed = new EmbedBuilder()
+      .setTitle('💀 BOUNTY HUNTER RANKS')
+      .setDescription('Earn these by completing bounty hunts!')
+      .addFields(
+        { name: '🔰 Rookie Hunter', value: '5+ completions', inline: true },
+        { name: '🎯 Sharpshooter', value: '25+ completions', inline: true },
+        { name: '🔍 Manhunter', value: '50+ completions', inline: true },
+        { name: '💀 Grim Reaper', value: '100+ completions', inline: true }
+      )
+      .setColor(0xF44336)
+      .setFooter({ text: 'Complete sessions using the ✅ Complete button!' });
+
+    await channel.send({ embeds: [bountyEmbed] });
+    await new Promise(r => setTimeout(r, 500));
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESSAGE 6: SPECIAL ACHIEVEMENTS
+    // ═══════════════════════════════════════════════════════════════
+    const specialEmbed = new EmbedBuilder()
+      .setTitle('🌟 SPECIAL ACHIEVEMENTS')
+      .setDescription('Rare roles for exceptional grinders!')
+      .addFields(
+        { name: '🏆 The #1', value: 'Top weekly contributor', inline: true },
+        { name: '🤝 Helping Hand', value: '50+ sessions as helper (non-host)', inline: true },
+        { name: '💎 Veteran Grinder', value: '500+ total completions', inline: true },
+        { name: '🔥 On Fire', value: '10 completions in 24 hours', inline: true }
+      )
+      .setColor(0xFFD700)
+      .setFooter({ text: 'These are rare. Flex them proudly.' });
+
+    await channel.send({ embeds: [specialEmbed] });
+    await new Promise(r => setTimeout(r, 500));
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESSAGE 7: VIP PERKS
+    // ═══════════════════════════════════════════════════════════════
+    const vipEmbed = new EmbedBuilder()
+      .setTitle('💜 VIP PERKS')
+      .setDescription('Boost the server to unlock exclusive perks!')
+      .addFields(
+        { name: 'How to Get VIP', value: 'Boost the server with Discord Nitro! Your VIP role is automatic.', inline: false },
+        { name: '🎁 Your Perks', value: 
+          '💜 **VIP Role** - Hoisted above regular members\n' +
+          '🔒 **VIP Lounge** - Exclusive booster-only chat\n' +
+          '⚡ **Priority LFG** - Get matched first in heists\n' +
+          '🎨 **Custom Color** - Stand out in chat\n' +
+          '📹 **Clips Access** - Immediate access (skip 7-day wait)\n' +
+          '💖 **Eternal Gratitude** - We love you', 
+          inline: false 
+        }
+      )
+      .setColor(0x9B59B6)
+      .setFooter({ text: 'Thank you for supporting The Unpatched Method! 💜' });
+
+    await channel.send({ embeds: [vipEmbed] });
+    await new Promise(r => setTimeout(r, 500));
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESSAGE 8: FAIR PLAY SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+    const fairPlayEmbed = new EmbedBuilder()
+      .setTitle('⚖️ FAIR PLAY SYSTEM')
+      .setDescription('We track activity to prevent abuse.')
+      .addFields(
+        { name: '⏱️ Minimum Session Time', value: 'Cayo: 15 min | Wagon: 8 min | Bounty: 5 min\n*Can\'t speed-run completions*', inline: false },
+        { name: '👥 Crew Verification', value: 'At least 2 people must join, and participants confirm completion.\n*No solo farming*', inline: false },
+        { name: '⏳ Cooldowns', value: 'Short wait between completions.\n*Prevents spam*', inline: false },
+        { name: '🔎 Pattern Detection', value: 'Lester watches for suspicious activity.\n*Same 2 people farming = flagged*', inline: false }
+      )
+      .setColor(0xE74C3C)
+      .setFooter({ text: 'Play fair. Earn your ranks legitimately.' });
+
+    await channel.send({ embeds: [fairPlayEmbed] });
+    await new Promise(r => setTimeout(r, 500));
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESSAGE 9: GAME & LFG ROLES
+    // ═══════════════════════════════════════════════════════════════
+    const rolesEmbed = new EmbedBuilder()
+      .setTitle('🎮 GAME & LFG ROLES')
+      .setDescription('Get these in #roles to unlock channels.')
+      .addFields(
+        { name: '🎯 Game Selection', value: 
+          '💰 **Los Santos Hustler** - GTA Online player\n' +
+          '🐴 **Frontier Outlaw** - Red Dead Online player', 
+          inline: false 
+        },
+        { name: '💰 GTA LFG Roles', value: 
+          '🏝️ **Cayo Grinder** - Unlocks cayo-lfg & talk-to-pavel', 
+          inline: false 
+        },
+        { name: '🤠 RDO LFG Roles', value: 
+          '🛞 **Wagon Runner** - Unlocks wagon-lfg & talk-to-cripps\n' +
+          '💀 **Bounty Hunter** - Unlocks bounty-lfg & talk-to-police-chief', 
+          inline: false 
+        },
+        { name: '🕹️ Platform Roles', value: 
+          '🎮 **PlayStation 5**\n' +
+          '🎮 **PlayStation 4**\n' +
+          '*If you have both, Lester will DM you to pick your primary!*', 
+          inline: false 
+        }
+      )
+      .setColor(0x5865F2)
+      .setFooter({ text: 'Pick your roles in #roles' });
+
+    await channel.send({ embeds: [rolesEmbed] });
+
+    await message.channel.send(`✅ Roles info posted to ${channel}!`);
+
+  } catch (error) {
+    console.error('Post roles info error:', error);
+    message.channel.send('❌ Failed to post roles info. Check permissions and try again.');
+  }
+}
+
+module.exports = { execute, executeReset, executeNuke, updateStatsChannels, updateBotCommands, postRolesInfo };
